@@ -38,6 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'django.contrib.gis',
+    'plots',
+
+
 ]
 
 MIDDLEWARE = [
@@ -75,7 +80,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': os.environ.get('DB_NAME', 'plots_db'),
         'USER': os.environ.get('DB_USER', 'plots_user'),
         'PASSWORD': os.environ.get('DB_PASSWORD', 'plots_password'),
