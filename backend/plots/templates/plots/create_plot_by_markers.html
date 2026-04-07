@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Plot by Markers</title>
+</head>
+<body>
+    <h1>Create Plot by Markers</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        <fieldset>
+            <legend>Plot Details</legend>
+            {{ plot_form.as_p }}
+        </fieldset>
+
+        <fieldset>
+            <legend>Markers</legend>
+            {{ marker_formset.management_form }}
+            {% for form in marker_formset %}
+                <div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">
+                    {{ form.as_p }}
+                </div>
+            {% endfor %}
+        </fieldset>
+
+        <button type="submit">Create Plot</button>
+    </form>
+</body>
+</html>
+

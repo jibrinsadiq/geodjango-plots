@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Delete Marker</title>
+</head>
+<body>
+    <h1>Delete Marker</h1>
+
+    <p>
+        Are you sure you want to delete marker
+        <strong>{{ marker.marker_name }}</strong>
+        from plot <strong>{{ plot.plot_name }}</strong>?
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Yes, Delete</button>
+        <a href="{% url 'plots:plot_detail' plot.id %}">Cancel</a>
+    </form>
+</body>
+</html>

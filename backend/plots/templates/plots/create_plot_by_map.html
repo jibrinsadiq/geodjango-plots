@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Plot by Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #map {
+            height: 500px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+        }
+
+        .links {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Create Plot by Map</h1>
+
+    <div class="links">
+        <a href="{% url 'plots:create_plot' %}">Create by Markers</a> |
+        <a href="{% url 'plots:create_plot_by_polygon' %}">Create by Typed Polygon</a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" id="plot-form">
+        {% csrf_token %}
+
+        <div class="form-section">
+            {{ form.plot_name.label_tag }}<br>
+            {{ form.plot_name }}
+        </div>
+
+        <div class="form-section">
+            {{ form.plot_code.label_tag }}<br>
+            {{ form.plot_code }}
+        </div>
+
+        <input type="hidden" name="polygon_json" id="polygon_json">
+
+        <div id="map"></div>
+
+        <button type="submit">Save Drawn Plot</button>
+    </form>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+
+    <script>
+        const map = L.map('map').setView([6.5, 3.4], 13);
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 22,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        const drawControl = new L.Control.Draw({
+            draw: {
+                polyline: false,
+                rectangle: false,
+                circle: false,
+                marker: false,
+                circlemarker: false,
+                polygon: {
+                    allowIntersection: false,
+                    showArea: true
+                }
+            },
+            edit: {
+                featureGroup: drawnItems,
+                edit: true,
+                remove: true
+            }
+        });
+
+        map.addControl(drawControl);
+
+        function updateHiddenPolygonField(layer) {
+            const latlngs = layer.getLatLngs();
+
+            if (!latlngs || !latlngs.length || !latlngs[0].length) {
+                document.getElementById('polygon_json').value = '';
+                return;
+            }
+
+            const coords = latlngs[0].map(point => ({
+                lat: point.lat,
+                lng: point.lng
+            }));
+
+            document.getElementById('polygon_json').value = JSON.stringify(coords);
+        }
+
+        map.on(L.Draw.Event.CREATED, function (event) {
+            drawnItems.clearLayers();
+            const layer = event.layer;
+            drawnItems.addLayer(layer);
+            updateHiddenPolygonField(layer);
+        });
+
+        map.on(L.Draw.Event.EDITED, function (event) {
+            event.layers.eachLayer(function (layer) {
+                updateHiddenPolygonField(layer);
+            });
+        });
+
+        map.on(L.Draw.Event.DELETED, function () {
+            document.getElementById('polygon_json').value = '';
+        });
+
+        document.getElementById('plot-form').addEventListener('submit', function (e) {
+            const polygonJson = document.getElementById('polygon_json').value;
+            if (!polygonJson) {
+                e.preventDefault();
+                alert('Please draw a polygon before saving.');
+            }
+        });
+    </script>
+</body>
+</html>

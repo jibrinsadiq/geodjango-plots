@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Plot by Polygon</title>
+</head>
+<body>
+    <h1>Create Plot by Polygon</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Create Plot from Polygon</button>
+    </form>
+<p><a href="{% url 'plots:create_plot' %}">Create Plot by Markers</a></p>
+    <p>
+        Example polygon points:
+    </p>
+    <pre>
+3.0,6.0
+3.1,6.0
+3.1,6.1
+3.0,6.1
+    </pre>
+</body>
+</html>
