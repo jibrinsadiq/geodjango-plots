@@ -52,6 +52,11 @@
     <p><strong>Area (sqm):</strong> {{ plot.area_sqm }}</p>
     <p><strong>Area (hectares):</strong> {{ plot.area_hectares }}</p>
 
+<p><strong>Active:</strong> {{ plot.is_active }}</p>
+<p><strong>Subdivided:</strong> {{ plot.is_subdivided }}</p>
+<p><strong>Parent Plot:</strong> {% if plot.parent_plot %}{{ plot.parent_plot.plot_name }}{% else %}None{% endif %}</p>
+<p><strong>Child Plots:</strong> {{ plot.sub_plots.count }}</p>
+
     {% if messages %}
         {% for message in messages %}
             <div class="message">{{ message }}</div>
@@ -130,6 +135,16 @@
 
     {{ polygon_coords|json_script:"polygon-coords" }}
     {{ marker_data|json_script:"marker-data" }}
+
+
+<p>
+    <a href="{% url 'plots:subdivide_plot_by_map' plot.id %}">Subdivide this plot</a>
+    {% if plot.sub_plots.count > 0 %}
+        |
+        <a href="{% url 'plots:finalize_subdivision' plot.id %}">Finalize subdivision</a>
+    {% endif %}
+</p>
+
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>

@@ -320,5 +320,31 @@ def subdivide_plot_by_map(request, parent_plot_id):
     )
 
 
+def finalize_subdivision(request, plot_id):
+    parent_plot = get_object_or_404(Plot, id=plot_id)
+
+    child_count = parent_plot.sub_plots.count()
+
+    if request.method == "POST":
+        if child_count < 1:
+            messages.error(request, "You cannot finalize subdivision because this plot has no child plots.")
+            return redirect("plots:plot_detail", plot_id=parent_plot.id)
+
+        parent_plot.is_subdivided = True
+        parent_plot.is_active = False
+        parent_plot.save(update_fields=["is_subdivided", "is_active", "updated_at"])
+
+        messages.success(request, "Subdivision finalized successfully. Parent plot is now inactive.")
+        return redirect("plots:plot_detail", plot_id=parent_plot.id)
+
+    return render(
+        request,
+        "plots/finalize_subdivision.html",
+        {
+            "parent_plot": parent_plot,
+            "child_count": child_count,
+        },
+    )
+
 
 

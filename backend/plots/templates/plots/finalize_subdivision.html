@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Finalize Subdivision</title>
+</head>
+<body>
+    <h1>Finalize Subdivision</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <p><strong>Parent Plot:</strong> {{ parent_plot.plot_name }}</p>
+    <p><strong>Number of Child Plots:</strong> {{ child_count }}</p>
+
+    {% if child_count < 1 %}
+        <p>This plot cannot be finalized because it has no child plots yet.</p>
+        <p><a href="{% url 'plots:plot_detail' parent_plot.id %}">Back to Plot Detail</a></p>
+    {% else %}
+        <p>
+            Finalizing subdivision will mark the parent plot as subdivided and inactive.
+            The child plots will remain active.
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit">Finalize Subdivision</button>
+            <a href="{% url 'plots:plot_detail' parent_plot.id %}">Cancel</a>
+        </form>
+    {% endif %}
+</body>
+</html>
