@@ -13,6 +13,7 @@ from .services import (
     extract_markers_from_polygon,
     compute_plot_area,
     validate_plot_overlap,
+    validate_plot_within_parent,
 )
 
 
@@ -230,3 +231,94 @@ def create_plot_by_map(request):
         form = PlotMapForm()
 
     return render(request, "plots/create_plot_by_map.html", {"form": form})
+
+
+
+def subdivide_plot_by_map(request, parent_plot_id):
+    parent_plot = get_object_or_404(Plot, id=parent_plot_id)
+
+    if not parent_plot.polygon:
+        messages.error(request, "Parent plot has no polygon to subdivide.")
+        return redirect("plots:plot_detail", plot_id=parent_plot.id)
+
+    if request.method == "POST":
+        form = ChildPlotForm(request.POST)
+        if form.is_valid():
+            polygon_json = request.POST.get("polygon_json")
+
+            try:
+                if not polygon_json:
+                    raise ValidationError("No child polygon was drawn.")
+
+                coords = json.loads(polygon_json)
+
+                if len(coords) < 3:
+                    raise ValidationError("A child polygon must have at least 3 points.")
+
+                polygon_coords = []
+                for point in coords:
+                    longitude = float(point["lng"])
+                    latitude = float(point["lat"])
+                    polygon_coords.append((longitude, latitude))
+
+                if polygon_coords[0] != polygon_coords[-1]:
+                    polygon_coords.append(polygon_coords[0])
+
+                child_polygon = Polygon(polygon_coords, srid=4326)
+
+                if not child_polygon.valid:
+                    raise ValidationError("The child polygon is not valid.")
+
+                validate_plot_within_parent(child_polygon, parent_plot)
+                validate_plot_overlap(child_polygon)
+
+                with transaction.atomic():
+                    child_plot = form.save(commit=False)
+                    child_plot.parent_plot = parent_plot
+                    child_plot.polygon = child_polygon
+                    child_plot.save()
+
+                    area_sqm, area_hectares = compute_plot_area(child_plot)
+                    child_plot.area_sqm = area_sqm
+                    child_plot.area_hectares = area_hectares
+                    child_plot.save(update_fields=["area_sqm", "area_hectares", "updated_at"])
+
+                    extract_markers_from_polygon(child_plot)
+
+                messages.success(request, "Child plot created successfully.")
+                return redirect("plots:plot_detail", plot_id=child_plot.id)
+
+            except Exception as e:
+                messages.error(request, f"Could not subdivide plot: {e}")
+    else:
+        form = ChildPlotForm()
+
+    parent_polygon_coords = list(parent_plot.polygon.coords[0]) if parent_plot.polygon else []
+
+    other_plots = Plot.objects.filter(
+        polygon__isnull=False
+    ).exclude(id=parent_plot.id)
+
+    other_plot_data = []
+    for plot in other_plots:
+        other_plot_data.append({
+            "id": plot.id,
+            "name": plot.plot_name,
+            "coords": list(plot.polygon.coords[0]),
+            "is_child_of_parent": plot.parent_plot_id == parent_plot.id,
+        })
+
+    return render(
+        request,
+        "plots/subdivide_plot_by_map.html",
+        {
+            "parent_plot": parent_plot,
+            "parent_polygon_coords": parent_polygon_coords,
+            "other_plot_data": other_plot_data,
+            "form": form,
+        },
+    )
+
+
+
+

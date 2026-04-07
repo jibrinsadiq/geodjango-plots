@@ -104,6 +104,15 @@ def validate_plot_overlap(polygon, exclude_plot_id=None):
             f"Polygon overlaps or conflicts with existing plot(s): {names}"
         )
     
+def validate_plot_within_parent(child_polygon, parent_plot):
+    if not parent_plot.polygon:
+        raise ValidationError("Parent plot has no polygon defined.")
+
+    if not child_polygon.within(parent_plot.polygon):
+        raise ValidationError(
+            f"Child plot must lie fully within parent plot '{parent_plot.plot_name}'."
+        )
     
+        
     
 

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Subdivide Plot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #map { height: 600px; margin-top: 20px; border: 1px solid #ccc; }
+        .legend {
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            width: fit-content;
+            background: #fafafa;
+        }
+        .legend-item {
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Subdivide Parent Plot: {{ parent_plot.plot_name }}</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" id="subdivide-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="hidden" name="polygon_json" id="polygon_json">
+        <div id="map"></div>
+        <button type="submit">Create Child Plot</button>
+    </form>
+
+    <div class="legend">
+        <div class="legend-item"><strong>Legend</strong></div>
+        <div class="legend-item">Parent plot: thick blue outline</div>
+        <div class="legend-item">Existing child plots of this parent: green</div>
+        <div class="legend-item">Other plots: grey</div>
+        <div class="legend-item">New child plot being drawn: Leaflet draw layer</div>
+    </div>
+
+    {{ parent_polygon_coords|json_script:"parent-polygon-coords" }}
+    {{ other_plot_data|json_script:"other-plot-data" }}
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+
+    <script>
+        const parentPolygonCoords = JSON.parse(document.getElementById("parent-polygon-coords").textContent);
+        const otherPlotData = JSON.parse(document.getElementById("other-plot-data").textContent);
+
+        const map = L.map('map').setView([6.5, 3.4], 13);
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 22,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const bounds = [];
+
+        // Parent plot
+        const parentLatLngs = parentPolygonCoords.map(coord => [coord[1], coord[0]]);
+        const parentPolygon = L.polygon(parentLatLngs, {
+            weight: 4,
+            color: 'blue',
+            fillOpacity: 0.08
+        }).addTo(map).bindPopup("Parent Plot: {{ parent_plot.plot_name|escapejs }}");
+
+        bounds.push(...parentLatLngs);
+
+        // Other plots
+        otherPlotData.forEach(plot => {
+            const latLngs = plot.coords.map(coord => [coord[1], coord[0]]);
+            bounds.push(...latLngs);
+
+            let styleOptions = {
+                weight: 2,
+                color: '#666',
+                fillOpacity: 0.05
+            };
+
+            if (plot.is_child_of_parent) {
+                styleOptions = {
+                    weight: 2,
+                    color: 'green',
+                    fillOpacity: 0.12
+                };
+            }
+
+            L.polygon(latLngs, styleOptions)
+                .addTo(map)
+                .bindPopup(
+                    plot.is_child_of_parent
+                        ? `Existing Child Plot: ${plot.name}`
+                        : `Other Plot: ${plot.name}`
+                );
+        });
+
+        if (bounds.length > 0) {
+            map.fitBounds(bounds, { padding: [20, 20] });
+        }
+
+        // Drawn layer
+        const drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        const drawControl = new L.Control.Draw({
+            draw: {
+                polyline: false,
+                rectangle: false,
+                circle: false,
+                marker: false,
+                circlemarker: false,
+                polygon: {
+                    allowIntersection: false,
+                    showArea: true
+                }
+            },
+            edit: {
+                featureGroup: drawnItems,
+                edit: true,
+                remove: true
+            }
+        });
+
+        map.addControl(drawControl);
+
+        function updateHiddenPolygonField(layer) {
+            const latlngs = layer.getLatLngs();
+
+            if (!latlngs || !latlngs.length || !latlngs[0].length) {
+                document.getElementById('polygon_json').value = '';
+                return;
+            }
+
+            const coords = latlngs[0].map(point => ({
+                lat: point.lat,
+                lng: point.lng
+            }));
+
+            document.getElementById('polygon_json').value = JSON.stringify(coords);
+        }
+
+        map.on(L.Draw.Event.CREATED, function (event) {
+            drawnItems.clearLayers();
+            const layer = event.layer;
+            drawnItems.addLayer(layer);
+            updateHiddenPolygonField(layer);
+        });
+
+        map.on(L.Draw.Event.EDITED, function (event) {
+            event.layers.eachLayer(function (layer) {
+                updateHiddenPolygonField(layer);
+            });
+        });
+
+        map.on(L.Draw.Event.DELETED, function () {
+            document.getElementById('polygon_json').value = '';
+        });
+
+        document.getElementById('subdivide-form').addEventListener('submit', function (e) {
+            const polygonJson = document.getElementById('polygon_json').value;
+            if (!polygonJson) {
+                e.preventDefault();
+                alert('Please draw a child polygon before saving.');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import create_plot, plot_detail, delete_marker, create_plot_by_polygon, create_plot_by_map
+from .views import create_plot, plot_detail, delete_marker, create_plot_by_polygon, create_plot_by_map, subdivide_plot_by_map
 
 app_name = "plots"
 
@@ -9,4 +9,6 @@ urlpatterns = [
     path("create/by-map/", create_plot_by_map, name="create_plot_by_map"),
     path("<int:plot_id>/", plot_detail, name="plot_detail"),
     path("<int:plot_id>/delete-marker/<int:marker_id>/", delete_marker, name="delete_marker"),
+    path("<int:parent_plot_id>/subdivide/by-map/", subdivide_plot_by_map, name="subdivide_plot_by_map"),
 ]
+

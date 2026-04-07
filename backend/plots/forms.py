@@ -46,3 +46,11 @@ class PlotMapForm(forms.ModelForm):
         model = Plot
         fields = ["plot_name", "plot_code"]        
 
+
+class ChildPlotForm(forms.ModelForm):
+    class Meta:
+        model = Plot
+        fields = ["plot_name", "plot_code"]
+
+
+
