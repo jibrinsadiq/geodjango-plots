@@ -49,3 +49,61 @@ def extract_markers_from_polygon(plot):
         created_markers.append(marker)
 
     return created_markers
+
+
+from django.db import connection
+
+
+def compute_plot_area(plot):
+    if not plot.polygon:
+        return None, None
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT
+                ST_Area(%s::geography) AS area_sqm
+            """,
+            [plot.polygon.ewkt],
+        )
+        row = cursor.fetchone()
+
+    area_sqm = float(row[0]) if row and row[0] is not None else None
+    area_hectares = area_sqm / 10000 if area_sqm is not None else None
+
+    return area_sqm, area_hectares
+
+from .models import Plot
+
+
+def validate_plot_overlap(polygon, exclude_plot_id=None):
+    candidate_plots = Plot.objects.filter(
+        is_active=True,
+        polygon__isnull=False,
+        polygon__intersects=polygon,
+    )
+
+    if exclude_plot_id:
+        candidate_plots = candidate_plots.exclude(id=exclude_plot_id)
+
+    bad_plots = []
+
+    for existing_plot in candidate_plots:
+        existing_polygon = existing_plot.polygon
+
+        # Allow boundary-only contact
+        if existing_polygon.touches(polygon):
+            continue
+
+        # Anything else that intersects is not allowed
+        bad_plots.append(existing_plot.plot_name)
+
+    if bad_plots:
+        names = ", ".join(bad_plots)
+        raise ValidationError(
+            f"Polygon overlaps or conflicts with existing plot(s): {names}"
+        )
+    
+    
+    
+

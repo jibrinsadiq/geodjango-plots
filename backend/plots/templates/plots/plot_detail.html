@@ -49,7 +49,8 @@
 <body>
     <h1>Plot: {{ plot.plot_name }}</h1>
     <p><strong>Plot Code:</strong> {{ plot.plot_code }}</p>
-    <p><strong>Area:</strong> {{ plot.area }}</p>
+    <p><strong>Area (sqm):</strong> {{ plot.area_sqm }}</p>
+    <p><strong>Area (hectares):</strong> {{ plot.area_hectares }}</p>
 
     {% if messages %}
         {% for message in messages %}

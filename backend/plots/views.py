@@ -1,17 +1,20 @@
+import json
+
 from django.contrib import messages
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import Point, Polygon
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
-import json
 
-from .forms import PlotForm, MarkerForm
-from .models import Plot, Marker
-from .services import build_polygon_from_markers
-
-from django.contrib.gis.geos import Polygon
 from .forms import PlotForm, MarkerForm, PlotPolygonForm, PlotMapForm
-from .services import build_polygon_from_markers, extract_markers_from_polygon
+from .models import Plot, Marker
+from .services import (
+    build_polygon_from_markers,
+    extract_markers_from_polygon,
+    compute_plot_area,
+    validate_plot_overlap,
+)
+
 
 
 def create_plot(request):
@@ -39,7 +42,7 @@ def plot_detail(request, plot_id):
 
     if request.method == "POST":
         if "save_marker" in request.POST:
-            if "marker_id" in request.POST and request.POST.get("marker_id"):
+            if request.POST.get("marker_id"):
                 marker_instance = get_object_or_404(
                     Marker, id=request.POST.get("marker_id"), plot=plot
                 )
@@ -64,8 +67,12 @@ def plot_detail(request, plot_id):
                 with transaction.atomic():
                     polygon = build_polygon_from_markers(plot)
                     plot.polygon = polygon
-                    plot.area = polygon.area
-                    plot.save()
+                    plot.save(update_fields=["polygon", "updated_at"])
+
+                    area_sqm, area_hectares = compute_plot_area(plot)
+                    plot.area_sqm = area_sqm
+                    plot.area_hectares = area_hectares
+                    plot.save(update_fields=["area_sqm", "area_hectares", "updated_at"])
 
                 messages.success(request, "Polygon generated successfully.")
                 return redirect("plots:plot_detail", plot_id=plot.id)
@@ -103,7 +110,6 @@ def plot_detail(request, plot_id):
     )
 
 
-
 def delete_marker(request, plot_id, marker_id):
     plot = get_object_or_404(Plot, id=plot_id)
     marker = get_object_or_404(Marker, id=marker_id, plot=plot)
@@ -123,8 +129,6 @@ def delete_marker(request, plot_id, marker_id):
     )
 
 
-
-
 def create_plot_by_polygon(request):
     if request.method == "POST":
         form = PlotPolygonForm(request.POST)
@@ -136,6 +140,7 @@ def create_plot_by_polygon(request):
                 for line in polygon_text.strip().splitlines():
                     if not line.strip():
                         continue
+
                     longitude_str, latitude_str = line.split(",")
                     longitude = float(longitude_str.strip())
                     latitude = float(latitude_str.strip())
@@ -155,8 +160,12 @@ def create_plot_by_polygon(request):
                 with transaction.atomic():
                     plot = form.save(commit=False)
                     plot.polygon = polygon
-                    plot.area = polygon.area
                     plot.save()
+
+                    area_sqm, area_hectares = compute_plot_area(plot)
+                    plot.area_sqm = area_sqm
+                    plot.area_hectares = area_hectares
+                    plot.save(update_fields=["area_sqm", "area_hectares", "updated_at"])
 
                     extract_markers_from_polygon(plot)
 
@@ -169,7 +178,6 @@ def create_plot_by_polygon(request):
         form = PlotPolygonForm()
 
     return render(request, "plots/create_plot_by_polygon.html", {"form": form})
-
 
 
 def create_plot_by_map(request):
@@ -204,8 +212,12 @@ def create_plot_by_map(request):
                 with transaction.atomic():
                     plot = form.save(commit=False)
                     plot.polygon = polygon
-                    plot.area = polygon.area
                     plot.save()
+
+                    area_sqm, area_hectares = compute_plot_area(plot)
+                    plot.area_sqm = area_sqm
+                    plot.area_hectares = area_hectares
+                    plot.save(update_fields=["area_sqm", "area_hectares", "updated_at"])
 
                     extract_markers_from_polygon(plot)
 
@@ -215,7 +227,6 @@ def create_plot_by_map(request):
             except Exception as e:
                 messages.error(request, f"Could not save drawn polygon: {e}")
     else:
-        form = PlotPolygonForm()
+        form = PlotMapForm()
 
     return render(request, "plots/create_plot_by_map.html", {"form": form})
-

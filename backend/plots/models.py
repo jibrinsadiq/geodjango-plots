@@ -5,7 +5,8 @@ class Plot(models.Model):
     plot_name = models.CharField(max_length=200, unique=True)
     plot_code = models.CharField(max_length=100, unique=True, blank=True, null=True)
     polygon = models.PolygonField(srid=4326, null=True, blank=True)
-    area = models.FloatField(blank=True, null=True)
+    area_sqm = models.FloatField(blank=True, null=True)
+    area_hectares = models.FloatField(blank=True, null=True)
     parent_plot = models.ForeignKey(
         'self',
         on_delete=models.SET_NULL,
