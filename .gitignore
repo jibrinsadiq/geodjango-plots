@@ -11,6 +11,7 @@ env/
 
 # Django
 media/
+backend/media/
 staticfiles/
 local_settings.py
 db.sqlite3

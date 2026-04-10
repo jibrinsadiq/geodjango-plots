@@ -1,0 +1,60 @@
+name: Build and Push Web and Nginx to ECR
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-2
+  ECR_WEB_REPOSITORY: geodjango-plots-web
+  ECR_NGINX_REPOSITORY: geodjango-plots-nginx
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::565095503962:role/github-actions-ecr-push-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build web image
+        run: docker build -t $ECR_WEB_REPOSITORY:latest -f docker/app/Dockerfile .
+
+      - name: Build nginx image
+        run: docker build -t $ECR_NGINX_REPOSITORY:latest -f docker/nginx/Dockerfile .
+
+      - name: Tag web image
+        run: |
+          docker tag $ECR_WEB_REPOSITORY:latest 565095503962.dkr.ecr.${AWS_REGION}.amazonaws.com/$ECR_WEB_REPOSITORY:latest
+          docker tag $ECR_WEB_REPOSITORY:latest 565095503962.dkr.ecr.${AWS_REGION}.amazonaws.com/$ECR_WEB_REPOSITORY:${GITHUB_SHA}
+
+      - name: Tag nginx image
+        run: |
+          docker tag $ECR_NGINX_REPOSITORY:latest 565095503962.dkr.ecr.${AWS_REGION}.amazonaws.com/$ECR_NGINX_REPOSITORY:latest
+          docker tag $ECR_NGINX_REPOSITORY:latest 565095503962.dkr.ecr.${AWS_REGION}.amazonaws.com/$ECR_NGINX_REPOSITORY:${GITHUB_SHA}
+
+      - name: Push web image
+        run: |
+          docker push 565095503962.dkr.ecr.${AWS_REGION}.amazonaws.com/$ECR_WEB_REPOSITORY:latest
+          docker push 565095503962.dkr.ecr.${AWS_REGION}.amazonaws.com/$ECR_WEB_REPOSITORY:${GITHUB_SHA}
+
+      - name: Push nginx image
+        run: |
+          docker push 565095503962.dkr.ecr.${AWS_REGION}.amazonaws.com/$ECR_NGINX_REPOSITORY:latest
+          docker push 565095503962.dkr.ecr.${AWS_REGION}.amazonaws.com/$ECR_NGINX_REPOSITORY:${GITHUB_SHA}
