@@ -1,6 +1,6 @@
 from django import forms
-from .models import Plot, Marker, Owner, PlotMedia
 
+from .models import Plot, Marker, Owner, PlotMedia
 
 
 class MarkerForm(forms.ModelForm):
@@ -39,7 +39,6 @@ class SplitPlotForm(forms.ModelForm):
         fields = ["plot_name", "plot_code"]
 
 
-
 class OwnerForm(forms.ModelForm):
     class Meta:
         model = Owner
@@ -65,7 +64,6 @@ class PlotOwnerAssignForm(forms.ModelForm):
         fields = ["owner", "availability_status", "cost", "amount_paid"]
 
 
-
 class PlotMediaForm(forms.ModelForm):
     class Meta:
         model = PlotMedia
@@ -75,6 +73,7 @@ class PlotMediaForm(forms.ModelForm):
         cleaned_data = super().clean()
         media_type = cleaned_data.get("media_type")
         media_role = cleaned_data.get("media_role")
+        uploaded_file = cleaned_data.get("file")
 
         if media_type == "image" and media_role == "plot_video":
             raise forms.ValidationError("Images cannot use the Plot Video role.")
@@ -82,9 +81,7 @@ class PlotMediaForm(forms.ModelForm):
         if media_type == "video" and media_role != "plot_video":
             raise forms.ValidationError("Videos must use the Plot Video role.")
 
+        if not uploaded_file:
+            raise forms.ValidationError("Please choose a file to upload.")
+
         return cleaned_data
-    
-    
-
-
-

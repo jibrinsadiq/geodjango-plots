@@ -21,12 +21,12 @@ services:
       context: .
       dockerfile: docker/app/Dockerfile
     container_name: plots_web
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
     volumes:
       - ./backend:/app
       - ./backend/media:/app/media
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     depends_on:
       db:
         condition: service_healthy
@@ -36,6 +36,18 @@ services:
       DB_PASSWORD: plots_password
       DB_HOST: db
       DB_PORT: 5432
+
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    container_name: plots_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./backend/media:/app/media:ro
+    depends_on:
+      - web
 
 volumes:
   postgres_data:

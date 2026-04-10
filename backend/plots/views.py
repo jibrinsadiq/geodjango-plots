@@ -176,7 +176,6 @@ def plot_detail(request, plot_id):
 
 
 
-
 def delete_marker(request, plot_id, marker_id):
     plot = get_object_or_404(Plot, id=plot_id)
     marker = get_object_or_404(Marker, id=marker_id, plot=plot)
@@ -558,6 +557,27 @@ def plot_gallery(request, plot_id):
         },
     )
 
+
+
+
+
+def delete_plot_media(request, plot_id, media_id):
+    plot = get_object_or_404(Plot, id=plot_id)
+    media = get_object_or_404(PlotMedia, id=media_id, plot=plot)
+
+    if request.method == "POST":
+        media.delete()
+        messages.success(request, "Media deleted successfully.")
+        return redirect("plots:plot_detail", plot_id=plot.id)
+
+    return render(
+        request,
+        "plots/delete_plot_media.html",
+        {
+            "plot": plot,
+            "media": media,
+        },
+    )
 
 
 

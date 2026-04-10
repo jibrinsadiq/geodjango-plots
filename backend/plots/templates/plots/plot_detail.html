@@ -184,6 +184,16 @@
             text-decoration: underline;
         }
 
+        .danger-link {
+            color: #b91c1c;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .danger-link:hover {
+            text-decoration: underline;
+        }
+
         .marker-form-grid {
             display: grid;
             grid-template-columns: 2fr 1fr 1.5fr 1.5fr;
@@ -239,7 +249,7 @@
     <div class="container">
         <h1>Plot: {{ plot.plot_name }}</h1>
         <p class="intro">
-            View one plot, its owner, sales details, markers, geometry, and related derived plots.
+            View one plot, its owner, sales details, markers, geometry, related derived plots, and media.
         </p>
 
         {% if messages %}
@@ -435,37 +445,61 @@
         </div>
 
         <div class="section">
-            <h2>Uploaded Media</h2>
+    <h2>Uploaded Media</h2>
 
-            {% if media_items %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Role</th>
-                            <th>Title</th>
-                            <th>Uploaded</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in media_items %}
-                            <tr>
-                                <td>{{ item.get_media_type_display }}</td>
-                                <td>{{ item.get_media_role_display }}</td>
-                                <td>{{ item.title|default:"-" }}</td>
-                                <td>{{ item.uploaded_at }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    {% if media_items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Preview</th>
+                    <th>Type</th>
+                    <th>Role</th>
+                    <th>Title</th>
+                    <th>Uploaded</th>
+                    <th>Open</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in media_items %}
+                    <tr>
+                        <td style="width: 110px;">
+                            {% if item.media_type == "image" %}
+                                <a href="{{ item.file.url }}" target="_blank">
+                                    <img
+                                        src="{{ item.file.url }}"
+                                        alt="{{ item.title|default:item.get_media_role_display }}"
+                                        style="width: 90px; height: 70px; object-fit: cover; border-radius: 6px; border: 1px solid #dbe4f0;"
+                                    >
+                                </a>
+                            {% else %}
+                                <div style="display:inline-block; padding:8px 10px; border-radius:6px; background:#eef2ff; color:#3730a3; font-weight:bold; font-size:12px;">
+                                    VIDEO
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.get_media_type_display }}</td>
+                        <td>{{ item.get_media_role_display }}</td>
+                        <td>{{ item.title|default:"-" }}</td>
+                        <td>{{ item.uploaded_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <a class="inline-link" href="{{ item.file.url }}" target="_blank">View File</a>
+                        </td>
+                        <td>
+                            <a class="danger-link" href="{% url 'plots:delete_plot_media' plot.id item.id %}">Delete</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
-                <div style="margin-top:10px;">
-                    <a class="inline-link" href="{% url 'plots:plot_gallery' plot.id %}">Open full gallery</a>
-                </div>
-            {% else %}
-                <p class="note">No media uploaded yet.</p>
-            {% endif %}
+        <div style="margin-top:10px;">
+            <a class="inline-link" href="{% url 'plots:plot_gallery' plot.id %}">Open full gallery</a>
         </div>
+    {% else %}
+        <p class="note">No media uploaded yet.</p>
+    {% endif %}
+</div>
 
         <div class="section">
             <h2>Plot Map</h2>

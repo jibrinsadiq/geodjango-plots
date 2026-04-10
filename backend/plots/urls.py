@@ -8,6 +8,7 @@ from .views import (
     owner_list,
     owner_create,
     plot_gallery,
+    delete_plot_media,
 )
 
 app_name = "plots"
@@ -25,4 +26,5 @@ urlpatterns = [
     path("<int:plot_id>/gallery/", plot_gallery, name="plot_gallery"),
     path("<int:plot_id>/", plot_detail, name="plot_detail"),
     path("<int:plot_id>/delete-marker/<int:marker_id>/", delete_marker, name="delete_marker"),
+    path("<int:plot_id>/delete-media/<int:media_id>/", delete_plot_media, name="delete_plot_media"),
 ]
