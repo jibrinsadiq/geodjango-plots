@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plots Workspace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f9fc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 18px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        h1, h2, h3 {
+            color: #1f2937;
+            margin-top: 0;
+        }
+
+        .intro {
+            color: #4b5563;
+            margin-bottom: 14px;
+            font-size: 14px;
+        }
+
+        .messages {
+            margin-bottom: 14px;
+        }
+
+        .message {
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: #eef6ff;
+            border: 1px solid #cfe3ff;
+            color: #1d4e89;
+            font-size: 14px;
+        }
+
+        .top-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .top-actions a {
+            display: inline-block;
+            padding: 9px 12px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            background: #2563eb;
+            color: white;
+            font-size: 14px;
+        }
+
+        .top-actions a:hover {
+            background: #1d4ed8;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 16px;
+        }
+
+        .panel, .map-panel {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #fafafa;
+            padding: 14px;
+        }
+
+        .panel-header {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .plot-search {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        .plot-list {
+            max-height: 760px;
+            overflow-y: auto;
+        }
+
+        .plot-item {
+            border: 1px solid #dbe4f0;
+            border-radius: 8px;
+            background: white;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .plot-item.selected {
+            border: 2px solid #2563eb;
+            background: #eff6ff;
+        }
+
+        .plot-item a {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .plot-item-title {
+            font-weight: bold;
+            color: #1f2937;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .meta {
+            color: #4b5563;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 6px;
+            background: #e5e7eb;
+            color: #1f2937;
+        }
+
+        .badge.active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge.inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .empty-search {
+            display: none;
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        #workspace-map {
+            height: 500px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            margin-bottom: 14px;
+        }
+
+        .selected-plot-box {
+            border: 1px solid #dbe4f0;
+            border-radius: 8px;
+            background: #ffffff;
+            padding: 12px;
+            margin-top: 8px;
+        }
+
+        .selected-plot-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .selected-plot-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #fafafa;
+            padding: 8px 10px;
+            font-size: 13px;
+        }
+
+        .selected-plot-item strong {
+            display: block;
+            margin-bottom: 3px;
+            color: #1f2937;
+            font-size: 12px;
+        }
+
+        .actions-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .actions-row a,
+        .actions-row button {
+            display: inline-block;
+            padding: 9px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .primary-btn {
+            background: #2563eb;
+            color: white;
+        }
+
+        .primary-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .secondary-btn {
+            background: #e5e7eb;
+            color: #1f2937;
+        }
+
+        .secondary-btn:hover {
+            background: #d1d5db;
+        }
+
+        .danger-btn {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .danger-btn:hover {
+            background: #fecaca;
+        }
+
+        .split-panel {
+            margin-top: 14px;
+            padding: 14px;
+            border: 1px solid #dbe4f0;
+            border-radius: 8px;
+            background: #ffffff;
+        }
+
+        .split-panel.hidden {
+            display: none;
+        }
+
+        .legend-box {
+            margin-top: 12px;
+            padding: 12px;
+            border: 1px solid #dbe4f0;
+            border-radius: 8px;
+            background: #ffffff;
+            width: fit-content;
+        }
+
+        form p {
+            margin-bottom: 10px;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            max-width: 100%;
+            padding: 9px;
+            margin-top: 4px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+            background: #ffffff;
+        }
+
+        th, td {
+            border: 1px solid #dbe4f0;
+            padding: 8px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f3f6fb;
+        }
+
+        .note {
+            color: #4b5563;
+            font-size: 14px;
+        }
+
+        .muted {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        @media (max-width: 980px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .plot-list {
+                max-height: none;
+            }
+
+            #workspace-map {
+                height: 420px;
+            }
+
+            .selected-plot-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .selected-plot-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Plots Workspace</h1>
+        <p class="intro">
+            Select a plot, view all plots on one map, and split the selected plot directly on that same map.
+        </p>
+
+        <div class="top-actions">
+            <a href="{% url 'plots:create_plot_by_marker_coordinates' %}">Create by Marker Coordinates</a>
+            <a href="{% url 'plots:create_plot_by_map' %}">Create by Map</a>
+        </div>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="message">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="layout">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>All Plots</h2>
+                    <input
+                        type="text"
+                        id="plot-search"
+                        class="plot-search"
+                        placeholder="Search by plot name or code"
+                    >
+                </div>
+
+                <div class="plot-list" id="plot-list">
+                    {% for plot in plots %}
+                        <div
+                            class="plot-item {% if selected_plot and plot.id == selected_plot.id %}selected{% endif %}"
+                            data-plot-name="{{ plot.plot_name|lower }}"
+                            data-plot-code="{{ plot.plot_code|default:''|lower }}"
+                        >
+                            <a href="{% url 'plots:plot_list' %}?plot_id={{ plot.id }}">
+                                <div class="plot-item-title">{{ plot.plot_name }}</div>
+                                <div class="meta">Code: {{ plot.plot_code|default:"-" }}</div>
+                                <div class="meta">Area: {{ plot.area_sqm|floatformat:2|default:"-" }} sqm</div>
+                                <div class="badge {% if plot.is_active %}active{% else %}inactive{% endif %}">
+                                    {% if plot.is_active %}Active{% else %}Inactive{% endif %}
+                                </div>
+                            </a>
+                        </div>
+                    {% empty %}
+                        <p class="note">No plots available yet.</p>
+                    {% endfor %}
+                </div>
+
+                <p id="empty-search-message" class="empty-search">
+                    No plots matched your search.
+                </p>
+            </div>
+
+            <div class="map-panel">
+                <h2>Workspace Map</h2>
+                <div id="workspace-map"></div>
+
+                {% if selected_plot %}
+                    <h2>Selected Plot</h2>
+
+                    <div class="selected-plot-box">
+                        <div class="selected-plot-grid">
+                            <div class="selected-plot-item">
+                                <strong>Name</strong>
+                                {{ selected_plot.plot_name }}
+                            </div>
+                            <div class="selected-plot-item">
+                                <strong>Code</strong>
+                                {{ selected_plot.plot_code|default:"-" }}
+                            </div>
+                            <div class="selected-plot-item">
+                                <strong>Status</strong>
+                                {% if selected_plot.is_active %}Active{% else %}Inactive{% endif %}
+                            </div>
+                            <div class="selected-plot-item">
+                                <strong>Area (sqm)</strong>
+                                {{ selected_plot.area_sqm|floatformat:2|default:"-" }}
+                            </div>
+                            <div class="selected-plot-item">
+                                <strong>Area (hectares)</strong>
+                                {{ selected_plot.area_hectares|floatformat:4|default:"-" }}
+                            </div>
+                            <div class="selected-plot-item">
+                                <strong>Source Plot</strong>
+                                {% if selected_plot.parent_plot %}{{ selected_plot.parent_plot.plot_name }}{% else %}-{% endif %}
+                            </div>
+                        </div>
+<div class="actions-row">
+    <a href="{% url 'plots:plot_detail' selected_plot.id %}" class="secondary-btn">Open Detail Page</a>
+    <a href="{% url 'plots:plot_gallery' selected_plot.id %}" class="secondary-btn">Open Gallery</a>
+
+    {% if selected_plot.is_active and selected_plot.polygon %}
+        <button type="button" id="start-split-btn" class="primary-btn">Start Split</button>
+        <button type="button" id="cancel-split-btn" class="danger-btn" style="display:none;">Cancel Split</button>
+    {% endif %}
+</div>
+
+                    </div>
+
+                    {% if selected_plot.is_active and selected_plot.polygon %}
+                        <div class="split-panel hidden" id="split-panel">
+                            <h3>Split Selected Plot</h3>
+                            <p class="note">
+                                Split mode is active. Draw one cut polygon on the same workspace map, then save.
+                            </p>
+
+                            <form method="post" id="split-form">
+                                {% csrf_token %}
+                                {{ split_form.as_p }}
+                                <input type="hidden" name="polygon_json" id="polygon_json">
+
+                                <div class="legend-box">
+                                    <div><strong>Legend</strong></div>
+                                    <div class="note">Selected plot: thick blue outline</div>
+                                    <div class="note">Other active plots: grey or green</div>
+                                    <div class="note">Cut polygon: draw layer on the same map</div>
+                                </div>
+
+                                <div style="margin-top: 15px;">
+                                    <button type="submit" name="split_plot" class="primary-btn">Split Selected Plot</button>
+                                </div>
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="split-panel">
+                            <p class="note">
+                                This selected plot cannot be split because it is either inactive or has no polygon.
+                            </p>
+                        </div>
+                    {% endif %}
+
+                    <div style="margin-top: 18px;">
+                        <h2>Derived Plots</h2>
+                        {% if child_plots %}
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Plot Name</th>
+                                        <th>Code</th>
+                                        <th>Area (sqm)</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for child in child_plots %}
+                                        <tr>
+                                            <td>{{ child.plot_name }}</td>
+                                            <td>{{ child.plot_code|default:"-" }}</td>
+                                            <td>{{ child.area_sqm|floatformat:2 }}</td>
+                                            <td>{% if child.is_active %}Active{% else %}Inactive{% endif %}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p class="note">No derived plots yet.</p>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <p class="note">Select a plot from the left to begin.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {{ plot_data|json_script:"plot-data" }}
+    {{ selected_plot_coords|json_script:"selected-plot-coords" }}
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+
+    <script>
+        const plotData = JSON.parse(document.getElementById("plot-data").textContent);
+        const selectedPlotCoords = JSON.parse(document.getElementById("selected-plot-coords").textContent);
+
+        const workspaceMap = L.map('workspace-map').setView([6.5, 3.4], 13);
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 22,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(workspaceMap);
+
+        const bounds = [];
+        let selectedPolygonLayer = null;
+
+        plotData.forEach(plot => {
+            if (!plot.coords || !plot.coords.length) return;
+
+            const latLngs = plot.coords.map(coord => [coord[1], coord[0]]);
+            bounds.push(...latLngs);
+
+            let styleOptions = {
+                weight: 2,
+                color: plot.is_active ? 'green' : '#888',
+                fillOpacity: 0.10
+            };
+
+            if (plot.is_selected) {
+                styleOptions = {
+                    weight: 4,
+                    color: 'blue',
+                    fillOpacity: 0.12
+                };
+            }
+
+            const layer = L.polygon(latLngs, styleOptions)
+                .addTo(workspaceMap)
+                .bindPopup(
+                    `<strong>${plot.name}</strong><br>` +
+                    `Code: ${plot.code ?? '-'}<br>` +
+                    `Area (sqm): ${plot.area_sqm ?? '-'}<br>` +
+                    `Active: ${plot.is_active}<br>` +
+                    `<span style="color:#2563eb;font-weight:bold;">Click polygon to select</span>`
+                );
+
+            layer.on('click', function () {
+                const url = new URL(window.location.href);
+                url.searchParams.set('plot_id', plot.id);
+                window.location.href = url.toString();
+            });
+
+            if (plot.is_selected) {
+                selectedPolygonLayer = layer;
+            }
+        });
+
+        if (bounds.length > 0) {
+            workspaceMap.fitBounds(bounds, { padding: [20, 20] });
+        }
+
+        const plotSearchInput = document.getElementById('plot-search');
+        const plotItems = document.querySelectorAll('.plot-item');
+        const emptySearchMessage = document.getElementById('empty-search-message');
+
+        if (plotSearchInput) {
+            plotSearchInput.addEventListener('input', function () {
+                const query = this.value.trim().toLowerCase();
+                let visibleCount = 0;
+
+                plotItems.forEach(item => {
+                    const name = item.dataset.plotName || '';
+                    const code = item.dataset.plotCode || '';
+
+                    const matches = name.includes(query) || code.includes(query);
+
+                    item.style.display = matches ? '' : 'none';
+
+                    if (matches) {
+                        visibleCount += 1;
+                    }
+                });
+
+                if (emptySearchMessage) {
+                    emptySearchMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+                }
+            });
+        }
+
+        {% if selected_plot and selected_plot.is_active and selected_plot.polygon %}
+            const splitPanel = document.getElementById('split-panel');
+            const startSplitBtn = document.getElementById('start-split-btn');
+            const cancelSplitBtn = document.getElementById('cancel-split-btn');
+            const splitForm = document.getElementById('split-form');
+            const polygonJsonField = document.getElementById('polygon_json');
+
+            const drawnItems = new L.FeatureGroup();
+            workspaceMap.addLayer(drawnItems);
+
+            let drawControl = null;
+            let splitMode = false;
+
+            function updateHiddenPolygonField(layer) {
+                const latlngs = layer.getLatLngs();
+
+                if (!latlngs || !latlngs.length || !latlngs[0].length) {
+                    polygonJsonField.value = '';
+                    return;
+                }
+
+                const coords = latlngs[0].map(point => ({
+                    lat: point.lat,
+                    lng: point.lng
+                }));
+
+                polygonJsonField.value = JSON.stringify(coords);
+            }
+
+            function enableSplitMode() {
+                if (splitMode) return;
+
+                splitMode = true;
+                splitPanel.classList.remove('hidden');
+                startSplitBtn.style.display = 'none';
+                cancelSplitBtn.style.display = 'inline-block';
+
+                drawControl = new L.Control.Draw({
+                    draw: {
+                        polyline: false,
+                        rectangle: false,
+                        circle: false,
+                        marker: false,
+                        circlemarker: false,
+                        polygon: {
+                            allowIntersection: false,
+                            showArea: true
+                        }
+                    },
+                    edit: {
+                        featureGroup: drawnItems,
+                        edit: true,
+                        remove: true
+                    }
+                });
+
+                workspaceMap.addControl(drawControl);
+
+                if (selectedPolygonLayer) {
+                    selectedPolygonLayer.openPopup();
+                }
+            }
+
+            function disableSplitMode() {
+                splitMode = false;
+                splitPanel.classList.add('hidden');
+                startSplitBtn.style.display = 'inline-block';
+                cancelSplitBtn.style.display = 'none';
+                polygonJsonField.value = '';
+                drawnItems.clearLayers();
+
+                if (drawControl) {
+                    workspaceMap.removeControl(drawControl);
+                    drawControl = null;
+                }
+            }
+
+            workspaceMap.on(L.Draw.Event.CREATED, function (event) {
+                if (!splitMode) return;
+
+                drawnItems.clearLayers();
+                const layer = event.layer;
+                drawnItems.addLayer(layer);
+                updateHiddenPolygonField(layer);
+            });
+
+            workspaceMap.on(L.Draw.Event.EDITED, function (event) {
+                if (!splitMode) return;
+
+                event.layers.eachLayer(function (layer) {
+                    updateHiddenPolygonField(layer);
+                });
+            });
+
+            workspaceMap.on(L.Draw.Event.DELETED, function () {
+                if (!splitMode) return;
+                polygonJsonField.value = '';
+            });
+
+            startSplitBtn.addEventListener('click', function () {
+                enableSplitMode();
+            });
+
+            cancelSplitBtn.addEventListener('click', function () {
+                disableSplitMode();
+            });
+
+            splitForm.addEventListener('submit', function (e) {
+                if (!polygonJsonField.value) {
+                    e.preventDefault();
+                    alert('Please draw a cut polygon before saving.');
+                }
+            });
+        {% endif %}
+    </script>
+</body>
+</html>

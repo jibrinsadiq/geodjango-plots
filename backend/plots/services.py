@@ -1,5 +1,5 @@
+from django.contrib.gis.geos import Polygon, Point, MultiPolygon
 
-from django.contrib.gis.geos import Polygon, Point
 from django.core.exceptions import ValidationError
 from .models import Marker
 
@@ -76,15 +76,15 @@ def compute_plot_area(plot):
 from .models import Plot
 
 
-def validate_plot_overlap(polygon, exclude_plot_id=None):
+def validate_plot_overlap(polygon, exclude_plot_ids=None):
     candidate_plots = Plot.objects.filter(
         is_active=True,
         polygon__isnull=False,
         polygon__intersects=polygon,
     )
 
-    if exclude_plot_id:
-        candidate_plots = candidate_plots.exclude(id=exclude_plot_id)
+    if exclude_plot_ids:
+        candidate_plots = candidate_plots.exclude(id__in=exclude_plot_ids)
 
     bad_plots = []
 
@@ -103,7 +103,10 @@ def validate_plot_overlap(polygon, exclude_plot_id=None):
         raise ValidationError(
             f"Polygon overlaps or conflicts with existing plot(s): {names}"
         )
-    
+
+
+
+
 def validate_plot_within_parent(child_polygon, parent_plot):
     if not parent_plot.polygon:
         raise ValidationError("Parent plot has no polygon defined.")
@@ -112,7 +115,78 @@ def validate_plot_within_parent(child_polygon, parent_plot):
         raise ValidationError(
             f"Child plot must lie fully within parent plot '{parent_plot.plot_name}'."
         )
-    
-        
+
+
+def split_plot_geometry(source_plot, cut_polygon):
+    if not source_plot.polygon:
+        raise ValidationError("Source plot has no polygon defined.")
+
+    remainder = source_plot.polygon.difference(cut_polygon)
+
+    if remainder.empty:
+        raise ValidationError("Cut polygon removes the entire source plot.")
+
+    if remainder.geom_type != "Polygon":
+        raise ValidationError(
+            "This split is not supported yet because the remainder becomes multiple polygons."
+        )
+
+    if not remainder.valid:
+        raise ValidationError("The remainder geometry is not valid.")
+
+    return remainder
+
+
+
+from math import sqrt
+
+
+def snap_polygon_vertices_to_parent(child_polygon, parent_plot, tolerance=0.0001):
+    """
+    Snap child polygon vertices to parent plot vertices if they are within tolerance.
+
+    tolerance is in degrees because SRID 4326 is being used.
+    0.0001 degrees is roughly ~11m at the equator.
+    You can reduce it later if needed.
+    """
+    if not parent_plot.polygon:
+        raise ValidationError("Parent plot has no polygon defined.")
+
+    child_coords = list(child_polygon.coords[0])
+    parent_coords = list(parent_plot.polygon.coords[0])
+
+    # remove repeated closing coordinate for comparison
+    if len(child_coords) > 1 and child_coords[0] == child_coords[-1]:
+        child_coords = child_coords[:-1]
+
+    if len(parent_coords) > 1 and parent_coords[0] == parent_coords[-1]:
+        parent_coords = parent_coords[:-1]
+
+    snapped_coords = []
+
+    for child_x, child_y in child_coords:
+        snapped_x, snapped_y = child_x, child_y
+
+        for parent_x, parent_y in parent_coords:
+            distance = sqrt((child_x - parent_x) ** 2 + (child_y - parent_y) ** 2)
+            if distance <= tolerance:
+                snapped_x, snapped_y = parent_x, parent_y
+                break
+
+        snapped_coords.append((snapped_x, snapped_y))
+
+    # close polygon
+    if snapped_coords[0] != snapped_coords[-1]:
+        snapped_coords.append(snapped_coords[0])
+
+    snapped_polygon = Polygon(snapped_coords, srid=4326)
+
+    if not snapped_polygon.valid:
+        raise ValidationError("Snapped child polygon is not valid.")
+
+    return snapped_polygon
+
+
+
     
 

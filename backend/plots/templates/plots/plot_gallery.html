@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plot Gallery</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f9fc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        h1, h2 {
+            color: #1f2937;
+            margin-top: 0;
+        }
+
+        .intro, .note {
+            color: #4b5563;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .actions a {
+            display: inline-block;
+            padding: 9px 12px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            background: #2563eb;
+            color: white;
+            font-size: 14px;
+        }
+
+        .actions a.secondary {
+            background: #e5e7eb;
+            color: #1f2937;
+        }
+
+        .section {
+            margin-bottom: 16px;
+            padding: 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #fafafa;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 8px;
+        }
+
+        .summary-card {
+            border: 1px solid #dbe4f0;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #ffffff;
+            font-size: 14px;
+        }
+
+        #map {
+            height: 360px;
+            margin-top: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px;
+        }
+
+        .gallery-card {
+            border: 1px solid #dbe4f0;
+            border-radius: 8px;
+            background: #ffffff;
+            padding: 10px;
+        }
+
+        .gallery-card h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 15px;
+            color: #1f2937;
+        }
+
+        .carousel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 8px;
+        }
+
+        .carousel-count {
+            font-size: 13px;
+            color: #6b7280;
+            white-space: nowrap;
+        }
+
+        .carousel-frame {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 220px;
+            background: #f8fafc;
+            border: 1px solid #dbe4f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .carousel-image {
+            display: none;
+            width: 100%;
+            height: 240px;
+            object-fit: cover;
+            cursor: zoom-in;
+            border-radius: 6px;
+        }
+
+        .carousel-image.active {
+            display: block;
+        }
+
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 999px;
+            background: rgba(31, 41, 55, 0.78);
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-arrow:hover {
+            background: rgba(31, 41, 55, 0.92);
+        }
+
+        .nav-arrow.left {
+            left: 10px;
+        }
+
+        .nav-arrow.right {
+            right: 10px;
+        }
+
+        .thumb-title {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #4b5563;
+        }
+
+        .video-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        video {
+            width: 100%;
+            max-width: 700px;
+            border-radius: 8px;
+            border: 1px solid #dbe4f0;
+            background: #000;
+        }
+
+        .image-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.88);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .image-modal.show {
+            display: flex;
+        }
+
+        .image-modal-content {
+            max-width: 95%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+            background: #fff;
+        }
+
+        .image-modal-close {
+            position: absolute;
+            top: 16px;
+            right: 24px;
+            font-size: 38px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        @media (max-width: 640px) {
+            .carousel-image {
+                height: 210px;
+            }
+
+            .nav-arrow {
+                width: 32px;
+                height: 32px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gallery: {{ plot.plot_name }}</h1>
+        <p class="intro">
+            External-style gallery view for this plot.
+        </p>
+
+        <div class="actions">
+            <a href="{% url 'plots:plot_list' %}" class="secondary">Plots Workspace</a>
+            <a href="{% url 'plots:plot_detail' plot.id %}" class="secondary">Plot Detail</a>
+        </div>
+
+        <div class="section">
+            <h2>Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <strong>Plot Code:</strong><br>
+                    {{ plot.plot_code|default:"-" }}
+                </div>
+                <div class="summary-card">
+                    <strong>Owner:</strong><br>
+                    {{ plot.owner|default:"-" }}
+                </div>
+                <div class="summary-card">
+                    <strong>Availability:</strong><br>
+                    {{ plot.get_availability_status_display }}
+                </div>
+                <div class="summary-card">
+                    <strong>Area (sqm):</strong><br>
+                    {{ plot.area_sqm|floatformat:2|default:"-" }}
+                </div>
+                <div class="summary-card">
+                    <strong>Area (hectares):</strong><br>
+                    {{ plot.area_hectares|floatformat:4|default:"-" }}
+                </div>
+                <div class="summary-card">
+                    <strong>Cost:</strong><br>
+                    {{ plot.cost|default:"-" }}
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Plot Map</h2>
+            <div id="map"></div>
+        </div>
+
+        <div class="section">
+            <h2>Image Gallery</h2>
+            <div class="gallery-grid">
+
+                <div class="gallery-card">
+                    <div class="carousel-header">
+                        <h3>Front View</h3>
+                        {% if front_images %}
+                            <span class="carousel-count" data-counter></span>
+                        {% endif %}
+                    </div>
+
+                    {% if front_images %}
+                        <div class="carousel-frame" data-carousel>
+                            {% if front_images|length > 1 %}
+                                <button type="button" class="nav-arrow left" data-prev>&#10094;</button>
+                            {% endif %}
+
+                            {% for item in front_images %}
+                                <img
+                                    src="{{ item.file.url }}"
+                                    alt="Front view"
+                                    class="carousel-image"
+                                    data-title="{{ item.title|default:'Front view' }}"
+                                >
+                            {% endfor %}
+
+                            {% if front_images|length > 1 %}
+                                <button type="button" class="nav-arrow right" data-next>&#10095;</button>
+                            {% endif %}
+                        </div>
+                        <div class="thumb-title" data-title-display></div>
+                    {% else %}
+                        <p class="note">No front view image uploaded.</p>
+                    {% endif %}
+                </div>
+
+                <div class="gallery-card">
+                    <div class="carousel-header">
+                        <h3>Back View</h3>
+                        {% if back_images %}
+                            <span class="carousel-count" data-counter></span>
+                        {% endif %}
+                    </div>
+
+                    {% if back_images %}
+                        <div class="carousel-frame" data-carousel>
+                            {% if back_images|length > 1 %}
+                                <button type="button" class="nav-arrow left" data-prev>&#10094;</button>
+                            {% endif %}
+
+                            {% for item in back_images %}
+                                <img
+                                    src="{{ item.file.url }}"
+                                    alt="Back view"
+                                    class="carousel-image"
+                                    data-title="{{ item.title|default:'Back view' }}"
+                                >
+                            {% endfor %}
+
+                            {% if back_images|length > 1 %}
+                                <button type="button" class="nav-arrow right" data-next>&#10095;</button>
+                            {% endif %}
+                        </div>
+                        <div class="thumb-title" data-title-display></div>
+                    {% else %}
+                        <p class="note">No back view image uploaded.</p>
+                    {% endif %}
+                </div>
+
+                <div class="gallery-card">
+                    <div class="carousel-header">
+                        <h3>Left Side View</h3>
+                        {% if left_images %}
+                            <span class="carousel-count" data-counter></span>
+                        {% endif %}
+                    </div>
+
+                    {% if left_images %}
+                        <div class="carousel-frame" data-carousel>
+                            {% if left_images|length > 1 %}
+                                <button type="button" class="nav-arrow left" data-prev>&#10094;</button>
+                            {% endif %}
+
+                            {% for item in left_images %}
+                                <img
+                                    src="{{ item.file.url }}"
+                                    alt="Left side view"
+                                    class="carousel-image"
+                                    data-title="{{ item.title|default:'Left side view' }}"
+                                >
+                            {% endfor %}
+
+                            {% if left_images|length > 1 %}
+                                <button type="button" class="nav-arrow right" data-next>&#10095;</button>
+                            {% endif %}
+                        </div>
+                        <div class="thumb-title" data-title-display></div>
+                    {% else %}
+                        <p class="note">No left side image uploaded.</p>
+                    {% endif %}
+                </div>
+
+                <div class="gallery-card">
+                    <div class="carousel-header">
+                        <h3>Right Side View</h3>
+                        {% if right_images %}
+                            <span class="carousel-count" data-counter></span>
+                        {% endif %}
+                    </div>
+
+                    {% if right_images %}
+                        <div class="carousel-frame" data-carousel>
+                            {% if right_images|length > 1 %}
+                                <button type="button" class="nav-arrow left" data-prev>&#10094;</button>
+                            {% endif %}
+
+                            {% for item in right_images %}
+                                <img
+                                    src="{{ item.file.url }}"
+                                    alt="Right side view"
+                                    class="carousel-image"
+                                    data-title="{{ item.title|default:'Right side view' }}"
+                                >
+                            {% endfor %}
+
+                            {% if right_images|length > 1 %}
+                                <button type="button" class="nav-arrow right" data-next>&#10095;</button>
+                            {% endif %}
+                        </div>
+                        <div class="thumb-title" data-title-display></div>
+                    {% else %}
+                        <p class="note">No right side image uploaded.</p>
+                    {% endif %}
+                </div>
+
+                <div class="gallery-card">
+                    <div class="carousel-header">
+                        <h3>Other View</h3>
+                        {% if other_images %}
+                            <span class="carousel-count" data-counter></span>
+                        {% endif %}
+                    </div>
+
+                    {% if other_images %}
+                        <div class="carousel-frame" data-carousel>
+                            {% if other_images|length > 1 %}
+                                <button type="button" class="nav-arrow left" data-prev>&#10094;</button>
+                            {% endif %}
+
+                            {% for item in other_images %}
+                                <img
+                                    src="{{ item.file.url }}"
+                                    alt="Other view"
+                                    class="carousel-image"
+                                    data-title="{{ item.title|default:'Other view' }}"
+                                >
+                            {% endfor %}
+
+                            {% if other_images|length > 1 %}
+                                <button type="button" class="nav-arrow right" data-next>&#10095;</button>
+                            {% endif %}
+                        </div>
+                        <div class="thumb-title" data-title-display></div>
+                    {% else %}
+                        <p class="note">No other image uploaded.</p>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Video</h2>
+            {% if videos %}
+                <div class="video-list">
+                    {% for item in videos %}
+                        <div>
+                            <video controls>
+                                <source src="{{ item.file.url }}">
+                                Your browser does not support the video tag.
+                            </video>
+                            <div class="thumb-title">{{ item.title|default:"Plot video" }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="note">No video uploaded.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="image-modal" class="image-modal">
+        <span id="image-modal-close" class="image-modal-close">&times;</span>
+        <img id="image-modal-img" class="image-modal-content" src="" alt="Expanded image">
+    </div>
+
+    {{ polygon_coords|json_script:"polygon-coords" }}
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const polygonCoords = JSON.parse(document.getElementById("polygon-coords").textContent);
+        const map = L.map('map').setView([6.5, 3.4], 13);
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 22,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        if (polygonCoords && polygonCoords.length > 0) {
+            const latLngs = polygonCoords.map(coord => [coord[1], coord[0]]);
+            const polygon = L.polygon(latLngs, {
+                weight: 3,
+                color: 'blue',
+                fillOpacity: 0.08
+            }).addTo(map);
+
+            map.fitBounds(polygon.getBounds(), { padding: [20, 20] });
+        }
+
+        document.querySelectorAll('.gallery-card').forEach(function(card) {
+            const frame = card.querySelector('[data-carousel]');
+            if (!frame) return;
+
+            const images = Array.from(frame.querySelectorAll('.carousel-image'));
+            const prevBtn = frame.querySelector('[data-prev]');
+            const nextBtn = frame.querySelector('[data-next]');
+            const counter = card.querySelector('[data-counter]');
+            const titleDisplay = card.querySelector('[data-title-display]');
+            let currentIndex = 0;
+
+            if (!images.length) return;
+
+            function updateCarousel() {
+                images.forEach(function(img, index) {
+                    img.classList.toggle('active', index === currentIndex);
+                });
+
+                if (counter) {
+                    counter.textContent = (currentIndex + 1) + ' / ' + images.length;
+                }
+
+                if (titleDisplay) {
+                    titleDisplay.textContent = images[currentIndex].dataset.title || '';
+                }
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function() {
+                    currentIndex = (currentIndex - 1 + images.length) % images.length;
+                    updateCarousel();
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function() {
+                    currentIndex = (currentIndex + 1) % images.length;
+                    updateCarousel();
+                });
+            }
+
+            images.forEach(function(img) {
+                img.addEventListener('click', function() {
+                    const modal = document.getElementById('image-modal');
+                    const modalImg = document.getElementById('image-modal-img');
+                    modalImg.src = img.src;
+                    modal.classList.add('show');
+                });
+            });
+
+            updateCarousel();
+        });
+
+        const modal = document.getElementById('image-modal');
+        const modalClose = document.getElementById('image-modal-close');
+
+        modalClose.addEventListener('click', function() {
+            modal.classList.remove('show');
+        });
+
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('show');
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                modal.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Create Plot by Map</title>
+    <title>Split Plot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="strict-origin-when-cross-origin">
 
@@ -25,9 +25,13 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
         }
 
+        h1, h2 {
+            color: #1f2937;
+        }
+
         h1 {
             margin-top: 0;
-            color: #1f2937;
+            margin-bottom: 10px;
         }
 
         .intro {
@@ -69,21 +73,16 @@
             color: #1d4e89;
         }
 
-        .form-section {
-            margin-bottom: 20px;
-        }
-
-        .form-card {
+        .section {
+            margin-bottom: 30px;
             padding: 20px;
             border: 1px solid #e5e7eb;
             border-radius: 10px;
             background: #fafafa;
-            margin-bottom: 20px;
         }
 
-        label {
-            font-weight: bold;
-            color: #1f2937;
+        form p {
+            margin-bottom: 15px;
         }
 
         input, textarea, select {
@@ -97,29 +96,28 @@
         }
 
         #map {
-            height: 550px;
+            height: 600px;
             margin-top: 20px;
-            margin-bottom: 20px;
             border: 1px solid #cbd5e1;
             border-radius: 8px;
         }
 
-        .errorlist {
-            color: #b91c1c;
-            margin: 5px 0 10px 0;
-        }
-
-        .note {
+        .legend {
             margin-top: 20px;
             padding: 15px;
-            background: #fafafa;
-            border: 1px solid #e5e7eb;
+            border: 1px solid #dbe4f0;
             border-radius: 8px;
+            background: #ffffff;
+            width: fit-content;
+        }
+
+        .legend-item {
+            margin-bottom: 6px;
             color: #4b5563;
         }
 
-        .actions {
-            margin-top: 20px;
+        .legend-item:last-child {
+            margin-bottom: 0;
         }
 
         button {
@@ -136,22 +134,44 @@
             background: #1d4ed8;
         }
 
-        .hint-list {
-            margin: 10px 0 0 18px;
+        .note {
             color: #4b5563;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .summary-card {
+            border: 1px solid #dbe4f0;
+            padding: 14px;
+            border-radius: 8px;
+            background: #ffffff;
+        }
+
+        .inline-link {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .inline-link:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Create Plot by Map</h1>
-
+        <h1>Split Plot: {{ source_plot.plot_name }}</h1>
         <p class="intro">
-            Use this page to draw a polygon directly on the map. You can also switch to marker entry
-            or typed polygon creation using the links below.
+            Draw a cut polygon inside the source plot. The system will create a cut plot and a
+            remainder plot, while keeping the original source plot inactive after a successful split.
         </p>
 
         <div class="nav-links">
+            <a href="{% url 'plots:plot_detail' source_plot.id %}">Back to Plot Detail</a>
             <a href="{% url 'plots:create_plot' %}">Create by Markers</a>
             <a href="{% url 'plots:create_plot_by_marker_coordinates' %}">Create by Polygon</a>
             <a href="{% url 'plots:create_plot_by_map' %}">Create by Map</a>
@@ -165,59 +185,95 @@
             </div>
         {% endif %}
 
-        {% if form.non_field_errors %}
-            <div class="messages">
-                <div class="message">{{ form.non_field_errors }}</div>
+        <div class="section">
+            <h2>Source Plot Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <strong>Plot Name:</strong><br>
+                    {{ source_plot.plot_name }}
+                </div>
+                <div class="summary-card">
+                    <strong>Plot Code:</strong><br>
+                    {{ source_plot.plot_code|default:"-" }}
+                </div>
+                <div class="summary-card">
+                    <strong>Area (sqm):</strong><br>
+                    {{ source_plot.area_sqm|floatformat:2|default:"-" }}
+                </div>
+                <div class="summary-card">
+                    <strong>Area (hectares):</strong><br>
+                    {{ source_plot.area_hectares|floatformat:4|default:"-" }}
+                </div>
             </div>
-        {% endif %}
+        </div>
 
-        <form method="post" id="plot-form">
-            {% csrf_token %}
+        <div class="section">
+            <h2>Draw Cut Polygon</h2>
 
-            <div class="form-card">
-                <div class="form-section">
-                    {{ form.plot_name.label_tag }}
-                    {{ form.plot_name }}
-                    {{ form.plot_name.errors }}
-                </div>
-
-                <div class="form-section">
-                    {{ form.plot_code.label_tag }}
-                    {{ form.plot_code }}
-                    {{ form.plot_code.errors }}
-                </div>
-
+            <form method="post" id="split-form">
+                {% csrf_token %}
+                {{ form.as_p }}
                 <input type="hidden" name="polygon_json" id="polygon_json">
 
                 <div id="map"></div>
 
-                <div class="actions">
-                    <button type="submit">Save Drawn Plot</button>
+                <div class="legend">
+                    <div class="legend-item"><strong>Legend</strong></div>
+                    <div class="legend-item">Source plot: thick blue outline</div>
+                    <div class="legend-item">Other active plots: grey</div>
+                    <div class="legend-item">New cut polygon: draw layer</div>
                 </div>
-            </div>
-        </form>
 
-        <div class="note">
-            Draw one polygon on the map, then save it. The system should validate the geometry,
-            calculate area, extract markers, and apply overlap rules consistently.
-            <ul class="hint-list">
-                <li>Draw only one polygon at a time.</li>
-                <li>You can edit the shape before saving.</li>
-                <li>If you delete the drawing, the polygon field is cleared.</li>
-            </ul>
+                <p class="note" style="margin-top: 20px;">
+                    Draw only one cut polygon at a time. You can edit or remove the drawn shape before saving.
+                </p>
+
+                <button type="submit">Create Cut Plot</button>
+            </form>
         </div>
     </div>
+
+    {{ source_polygon_coords|json_script:"source-polygon-coords" }}
+    {{ active_plot_data|json_script:"active-plot-data" }}
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 
     <script>
+        const sourcePolygonCoords = JSON.parse(document.getElementById("source-polygon-coords").textContent);
+        const activePlotData = JSON.parse(document.getElementById("active-plot-data").textContent);
+
         const map = L.map('map').setView([6.5, 3.4], 13);
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 22,
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
+
+        const bounds = [];
+
+        const sourceLatLngs = sourcePolygonCoords.map(coord => [coord[1], coord[0]]);
+        L.polygon(sourceLatLngs, {
+            weight: 4,
+            color: 'blue',
+            fillOpacity: 0.08
+        }).addTo(map).bindPopup("Source Plot: {{ source_plot.plot_name|escapejs }}");
+        bounds.push(...sourceLatLngs);
+
+        activePlotData.forEach(plot => {
+            const latLngs = plot.coords.map(coord => [coord[1], coord[0]]);
+            bounds.push(...latLngs);
+
+            L.polygon(latLngs, {
+                weight: 2,
+                color: '#666',
+                fillOpacity: 0.05
+            }).addTo(map).bindPopup(`Other Active Plot: ${plot.name}`);
+        });
+
+        if (bounds.length > 0) {
+            map.fitBounds(bounds, { padding: [20, 20] });
+        }
 
         const drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
@@ -276,11 +332,11 @@
             document.getElementById('polygon_json').value = '';
         });
 
-        document.getElementById('plot-form').addEventListener('submit', function (e) {
+        document.getElementById('split-form').addEventListener('submit', function (e) {
             const polygonJson = document.getElementById('polygon_json').value;
             if (!polygonJson) {
                 e.preventDefault();
-                alert('Please draw a polygon before saving.');
+                alert('Please draw a cut polygon before saving.');
             }
         });
     </script>

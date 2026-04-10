@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Owners</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f9fc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #1f2937;
+        }
+
+        .actions {
+            margin-bottom: 18px;
+        }
+
+        .actions a {
+            display: inline-block;
+            padding: 9px 12px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            background: #2563eb;
+            color: white;
+            margin-right: 8px;
+        }
+
+        .actions a.secondary {
+            background: #e5e7eb;
+            color: #1f2937;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background: #ffffff;
+        }
+
+        th, td {
+            border: 1px solid #dbe4f0;
+            padding: 8px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f3f6fb;
+        }
+
+        .note {
+            color: #4b5563;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Owners</h1>
+
+        <div class="actions">
+            <a href="{% url 'plots:plot_list' %}" class="secondary">Plots Workspace</a>
+            <a href="{% url 'plots:owner_create' %}">Add Owner</a>
+        </div>
+
+        {% if owners %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>ID Type</th>
+                        <th>ID Number</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for owner in owners %}
+                        <tr>
+                            <td>{{ owner }}</td>
+                            <td>{{ owner.phone_number|default:"-" }}</td>
+                            <td>{{ owner.email|default:"-" }}</td>
+                            <td>{{ owner.get_id_type_display|default:"-" }}</td>
+                            <td>{{ owner.id_number|default:"-" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="note">No owners yet.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
