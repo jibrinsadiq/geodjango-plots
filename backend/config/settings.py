@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     'django.contrib.gis',
     'plots',
+    'django.contrib.humanize',
 
 
 ]

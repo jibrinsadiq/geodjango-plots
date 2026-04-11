@@ -1,0 +1,77 @@
+You now have:
+
+app reachable on EC2 public IP
+nginx serving traffic
+gunicorn serving Django
+PostGIS running
+media upload working
+admin reachable
+superuser working
+GitHub Actions pushing images to ECR
+
+
+
+current flow is:
+
+code push to GitHub
+GitHub Actions builds and pushes web and nginx to ECR
+EC2 runs redeploy.sh
+app updates cleanly
+
+
+
+
+Whenever GitHub Actions has pushed fresh images, you SSH into EC2 and run:
+~/geodjango-plots/redeploy.sh
+and for logs:
+~/geodjango-plots/logs.sh
+
+
+##=====logging into aws ecs=================================================
+
+From Git Bash on your laptop, use:
+
+ssh -i /c/Users/a/.ssh/geodjango-plots-key.pem ubuntu@35.179.128.132
+or......
+ssh -i /c/Users/a/.ssh/geodjango-plots-key.pem ubuntu@ec2-35-179-128-132.eu-west-2.compute.amazonaws.com
+
+
+###===========================================================
+After connecting
+###===========================================================
+
+Your useful commands are:
+
+cd ~/geodjango-plots
+./redeploy.sh
+./logs.sh
+
+
+#===================================================
+If it ever says permission denied on the key
+#===================================================
+
+
+Run once in Git Bash:
+
+chmod 400 /c/Users/a/.ssh/geodjango-plots-key.pem
+
+
+
+
+
+#=============================================================================================================
+# Local Docker start and use
+#=============================================================================================================
+
+
+local dev → docker compose up -d --build
+EC2 prod → docker compose -f docker-compose.prod.yml up -d
+
+
+
+
+
+
+
+

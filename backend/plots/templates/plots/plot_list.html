@@ -1,3 +1,5 @@
+{% load humanize %}
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -9,114 +11,226 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
 
     <style>
+        :root {
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --card-soft: #f8fbff;
+            --card-strong: #eef4ff;
+            --border: #d7e0ea;
+            --border-soft: #e7edf5;
+            --text: #172033;
+            --muted: #5f6b7a;
+            --primary: #1d4ed8;
+            --primary-dark: #1e40af;
+            --primary-soft: #e8f0ff;
+            --success-bg: #dcfce7;
+            --success-text: #166534;
+            --danger-bg: #fee2e2;
+            --danger-text: #991b1b;
+            --neutral-bg: #edf2f7;
+            --neutral-text: #334155;
+            --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            --shadow-soft: 0 4px 14px rgba(15, 23, 42, 0.06);
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
-            background: #f7f9fc;
+            background: linear-gradient(to bottom, #f6f9fc 0%, #eef3f9 100%);
             margin: 0;
             padding: 0;
+            color: var(--text);
         }
 
         .container {
-            max-width: 1300px;
-            margin: 20px auto;
-            background: #ffffff;
-            padding: 18px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            max-width: 1400px;
+            margin: 24px auto;
+            background: var(--card);
+            padding: 22px;
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            border: 1px solid #e8eef5;
         }
 
         h1, h2, h3 {
-            color: #1f2937;
+            color: var(--text);
             margin-top: 0;
+            text-align: center;
+            letter-spacing: 0.2px;
+        }
+
+        h1 {
+            font-size: 30px;
+            margin-bottom: 6px;
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        h3 {
+            font-size: 17px;
+            margin-bottom: 10px;
         }
 
         .intro {
-            color: #4b5563;
-            margin-bottom: 14px;
+            color: var(--muted);
+            margin-bottom: 18px;
             font-size: 14px;
+            text-align: center;
+            max-width: 820px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.5;
         }
 
         .messages {
-            margin-bottom: 14px;
-        }
-
-        .message {
-            padding: 10px 12px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            background: #eef6ff;
-            border: 1px solid #cfe3ff;
-            color: #1d4e89;
-            font-size: 14px;
-        }
-
-        .top-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
             margin-bottom: 16px;
         }
 
-        .top-actions a {
-            display: inline-block;
-            padding: 9px 12px;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: bold;
-            background: #2563eb;
-            color: white;
+        .message {
+            padding: 11px 14px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            background: #eef6ff;
+            border: 1px solid #cfe0ff;
+            color: #174a84;
             font-size: 14px;
         }
 
+
+.top-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.action-btn {
+    display: inline-block;
+    padding: 10px 15px;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: var(--shadow-soft);
+    transition: 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+}
+
+.action-btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.action-btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.action-btn-owner {
+    background: #0f766e;
+    color: white;
+}
+
+.action-btn-owner:hover {
+    background: #115e59;
+}
+
+
+        .top-actions a {
+            display: inline-block;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            background: var(--primary);
+            color: white;
+            font-size: 14px;
+            box-shadow: var(--shadow-soft);
+            transition: 0.2s ease;
+        }
+
         .top-actions a:hover {
-            background: #1d4ed8;
+            background: var(--primary-dark);
+            transform: translateY(-1px);
         }
 
         .layout {
             display: grid;
-            grid-template-columns: 340px 1fr;
-            gap: 16px;
+            grid-template-columns: 330px 1fr;
+            gap: 18px;
+            align-items: start;
         }
 
-        .panel, .map-panel {
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            background: #fafafa;
-            padding: 14px;
+        .panel,
+        .map-panel {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: linear-gradient(to bottom, #ffffff 0%, #f9fbfe 100%);
+            padding: 16px;
+            box-shadow: var(--shadow-soft);
         }
 
         .panel-header {
             display: flex;
             flex-direction: column;
             gap: 10px;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
         }
 
         .plot-search {
             width: 100%;
-            padding: 9px 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            box-sizing: border-box;
+            padding: 10px 12px;
+            border: 1px solid #c9d5e4;
+            border-radius: 10px;
             font-size: 14px;
+            background: #ffffff;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .plot-search:focus,
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #8fb3ff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
         }
 
         .plot-list {
-            max-height: 760px;
+            max-height: 700px;
             overflow-y: auto;
+            padding-right: 4px;
         }
 
         .plot-item {
-            border: 1px solid #dbe4f0;
-            border-radius: 8px;
-            background: white;
-            padding: 10px;
+            border: 1px solid #d9e3ee;
+            border-radius: 12px;
+            background: linear-gradient(to bottom, #ffffff 0%, #f9fbfd 100%);
+            padding: 12px;
             margin-bottom: 10px;
+            transition: 0.2s ease;
+        }
+
+        .plot-item:hover {
+            border-color: #b7c8dc;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+            transform: translateY(-1px);
         }
 
         .plot-item.selected {
-            border: 2px solid #2563eb;
-            background: #eff6ff;
+            border: 2px solid var(--primary);
+            background: linear-gradient(to bottom, #eff5ff 0%, #e8f0ff 100%);
+            box-shadow: 0 8px 20px rgba(29, 78, 216, 0.10);
         }
 
         .plot-item a {
@@ -127,36 +241,34 @@
 
         .plot-item-title {
             font-weight: bold;
-            color: #1f2937;
+            color: var(--text);
             font-size: 14px;
-            margin-bottom: 4px;
+            margin-bottom: 5px;
         }
 
         .meta {
-            color: #4b5563;
+            color: var(--muted);
             font-size: 13px;
             margin-top: 4px;
         }
 
         .badge {
             display: inline-block;
-            padding: 4px 8px;
+            padding: 4px 9px;
             border-radius: 999px;
             font-size: 12px;
             font-weight: bold;
-            margin-top: 6px;
-            background: #e5e7eb;
-            color: #1f2937;
+            margin-top: 8px;
         }
 
         .badge.active {
-            background: #dcfce7;
-            color: #166534;
+            background: var(--success-bg);
+            color: var(--success-text);
         }
 
         .badge.inactive {
-            background: #fee2e2;
-            color: #991b1b;
+            background: var(--danger-bg);
+            color: var(--danger-text);
         }
 
         .empty-search {
@@ -166,95 +278,112 @@
             margin-top: 10px;
         }
 
-        #workspace-map {
-            height: 500px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            margin-bottom: 14px;
-        }
+        
+.selected-plot-box {
+    border: 1px solid #cfdced;
+    border-radius: 14px;
+    background: linear-gradient(to right, #f8fbff 0%, #eef4ff 100%);
+    padding: 8px 10px;
+    margin-bottom: 12px;
+}
 
-        .selected-plot-box {
-            border: 1px solid #dbe4f0;
-            border-radius: 8px;
-            background: #ffffff;
-            padding: 12px;
-            margin-top: 8px;
-        }
+.selected-plot-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(140px, 1fr));
+    gap: 6px;
+    margin-top: 4px;
+}
 
-        .selected-plot-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(140px, 1fr));
-            gap: 8px;
-            margin-top: 8px;
-        }
+.selected-plot-item {
+    border: 1px solid #dce6f2;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.82);
+    padding: 5px 7px;
+    font-size: 13px;
+    min-height: auto;
+    line-height: 1.25;
+}
 
-        .selected-plot-item {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            background: #fafafa;
-            padding: 8px 10px;
-            font-size: 13px;
-        }
+.selected-plot-item strong {
+    display: block;
+    margin-bottom: 2px;
+    color: #334155;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    line-height: 1.1;
+}
 
-        .selected-plot-item strong {
-            display: block;
-            margin-bottom: 3px;
-            color: #1f2937;
-            font-size: 12px;
-        }
+.actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
 
-        .actions-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 12px;
-        }
+.actions-row a,
+.actions-row button {
+    display: inline-block;
+    padding: 7px 10px;
+    border-radius: 10px;
+    font-weight: bold;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s ease;
+}
 
-        .actions-row a,
-        .actions-row button {
-            display: inline-block;
-            padding: 9px 12px;
-            border-radius: 6px;
-            font-weight: bold;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
+
+        .actions-row a:hover,
+        .actions-row button:hover {
+            transform: translateY(-1px);
         }
 
         .primary-btn {
-            background: #2563eb;
+            background: var(--primary);
             color: white;
+            box-shadow: var(--shadow-soft);
         }
 
         .primary-btn:hover {
-            background: #1d4ed8;
+            background: var(--primary-dark);
         }
 
         .secondary-btn {
-            background: #e5e7eb;
+            background: #e8eef6;
             color: #1f2937;
         }
 
         .secondary-btn:hover {
-            background: #d1d5db;
+            background: #dbe5f0;
         }
 
         .danger-btn {
-            background: #fee2e2;
-            color: #991b1b;
+            background: var(--danger-bg);
+            color: var(--danger-text);
         }
 
         .danger-btn:hover {
             background: #fecaca;
         }
 
+        #workspace-map {
+            height: 440px;
+            border: 1px solid #cfd8e3;
+            border-radius: 14px;
+            margin-bottom: 14px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+        }
+
         .split-panel {
             margin-top: 14px;
-            padding: 14px;
-            border: 1px solid #dbe4f0;
-            border-radius: 8px;
-            background: #ffffff;
+            padding: 15px;
+            border: 1px solid #d7e1ec;
+            border-radius: 14px;
+            background: linear-gradient(to bottom, #ffffff 0%, #f8fbff 100%);
         }
 
         .split-panel.hidden {
@@ -264,9 +393,9 @@
         .legend-box {
             margin-top: 12px;
             padding: 12px;
-            border: 1px solid #dbe4f0;
-            border-radius: 8px;
-            background: #ffffff;
+            border: 1px solid #d7e1ec;
+            border-radius: 12px;
+            background: #f8fbff;
             width: fit-content;
         }
 
@@ -277,11 +406,12 @@
         input, textarea, select {
             width: 100%;
             max-width: 100%;
-            padding: 9px;
+            padding: 10px;
             margin-top: 4px;
             border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            box-sizing: border-box;
+            border-radius: 10px;
+            background: white;
+            font-size: 14px;
         }
 
         table {
@@ -289,27 +419,35 @@
             width: 100%;
             margin-top: 10px;
             background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
         }
 
         th, td {
-            border: 1px solid #dbe4f0;
-            padding: 8px;
+            border: 1px solid #dde5ef;
+            padding: 10px;
             text-align: left;
             font-size: 14px;
         }
 
         th {
-            background: #f3f6fb;
+            background: #eef4fb;
+            color: #243041;
         }
 
         .note {
-            color: #4b5563;
+            color: var(--muted);
             font-size: 14px;
+            line-height: 1.5;
         }
 
         .muted {
             color: #6b7280;
             font-size: 13px;
+        }
+
+        .section-block {
+            margin-top: 18px;
         }
 
         @media (max-width: 980px) {
@@ -322,7 +460,7 @@
             }
 
             #workspace-map {
-                height: 420px;
+                height: 400px;
             }
 
             .selected-plot-grid {
@@ -331,8 +469,21 @@
         }
 
         @media (max-width: 640px) {
+            .container {
+                padding: 14px;
+                margin: 12px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
             .selected-plot-grid {
                 grid-template-columns: 1fr;
+            }
+
+            #workspace-map {
+                height: 340px;
             }
         }
     </style>
@@ -341,13 +492,26 @@
     <div class="container">
         <h1>Plots Workspace</h1>
         <p class="intro">
-            Select a plot, view all plots on one map, and split the selected plot directly on that same map.
+            Select a plot, review its details, view all plots on one shared map, and split the selected plot directly from the workspace.
         </p>
 
-        <div class="top-actions">
-            <a href="{% url 'plots:create_plot_by_marker_coordinates' %}">Create by Marker Coordinates</a>
-            <a href="{% url 'plots:create_plot_by_map' %}">Create by Map</a>
-        </div>
+<div class="top-actions">
+    <a href="{% url 'plots:create_plot_by_marker_coordinates' %}" class="action-btn action-btn-primary">
+        Create by Marker Coordinates
+    </a>
+    <a href="{% url 'plots:create_plot_by_map' %}" class="action-btn action-btn-primary">
+        Create by Map
+    </a>
+    <a href="{% url 'plots:owner_list' %}" class="action-btn action-btn-owner">
+        Owners
+        <span class="action-count">{{ owners_count }}</span>
+    </a>
+    <a href="{% url 'plots:owner_create' %}" class="action-btn action-btn-owner">
+        Add Owner
+    </a>
+</div>
+
+
 
         {% if messages %}
             <div class="messages">
@@ -379,7 +543,7 @@
                             <a href="{% url 'plots:plot_list' %}?plot_id={{ plot.id }}">
                                 <div class="plot-item-title">{{ plot.plot_name }}</div>
                                 <div class="meta">Code: {{ plot.plot_code|default:"-" }}</div>
-                                <div class="meta">Area: {{ plot.area_sqm|floatformat:2|default:"-" }} sqm</div>
+                                <div class="meta">Area: {{ plot.area_sqm|floatformat:2|intcomma|default:"-" }} sqm</div>
                                 <div class="badge {% if plot.is_active %}active{% else %}inactive{% endif %}">
                                     {% if plot.is_active %}Active{% else %}Inactive{% endif %}
                                 </div>
@@ -396,9 +560,6 @@
             </div>
 
             <div class="map-panel">
-                <h2>Workspace Map</h2>
-                <div id="workspace-map"></div>
-
                 {% if selected_plot %}
                     <h2>Selected Plot</h2>
 
@@ -429,18 +590,23 @@
                                 {% if selected_plot.parent_plot %}{{ selected_plot.parent_plot.plot_name }}{% else %}-{% endif %}
                             </div>
                         </div>
-<div class="actions-row">
-    <a href="{% url 'plots:plot_detail' selected_plot.id %}" class="secondary-btn">Open Detail Page</a>
-    <a href="{% url 'plots:plot_gallery' selected_plot.id %}" class="secondary-btn">Open Gallery</a>
 
-    {% if selected_plot.is_active and selected_plot.polygon %}
-        <button type="button" id="start-split-btn" class="primary-btn">Start Split</button>
-        <button type="button" id="cancel-split-btn" class="danger-btn" style="display:none;">Cancel Split</button>
-    {% endif %}
-</div>
+                        <div class="actions-row">
+                            <a href="{% url 'plots:plot_detail' selected_plot.id %}" class="secondary-btn">Open Detail Page</a>
+                            <a href="{% url 'plots:plot_gallery' selected_plot.id %}" class="secondary-btn">Open Gallery</a>
 
+                            {% if selected_plot.is_active and selected_plot.polygon %}
+                                <button type="button" id="start-split-btn" class="primary-btn">Start Split</button>
+                                <button type="button" id="cancel-split-btn" class="danger-btn" style="display:none;">Cancel Split</button>
+                            {% endif %}
+                        </div>
                     </div>
+                {% endif %}
 
+                <h2>Workspace Map</h2>
+                <div id="workspace-map"></div>
+
+                {% if selected_plot %}
                     {% if selected_plot.is_active and selected_plot.polygon %}
                         <div class="split-panel hidden" id="split-panel">
                             <h3>Split Selected Plot</h3>
@@ -473,7 +639,7 @@
                         </div>
                     {% endif %}
 
-                    <div style="margin-top: 18px;">
+                    <div class="section-block">
                         <h2>Derived Plots</h2>
                         {% if child_plots %}
                             <table>

@@ -493,6 +493,11 @@ def plot_list(request):
             selected_plot_coords = list(selected_plot.polygon.coords[0])
         child_plots = selected_plot.sub_plots.order_by("plot_name")
 
+    total_plots_count = plots.count()
+    active_plots_count = plots.filter(is_active=True).count()
+    inactive_plots_count = plots.filter(is_active=False).count()
+    owners_count = Owner.objects.count()
+
     return render(
         request,
         "plots/plot_list.html",
@@ -503,8 +508,13 @@ def plot_list(request):
             "selected_plot_coords": selected_plot_coords,
             "child_plots": child_plots,
             "split_form": split_form,
+            "total_plots_count": total_plots_count,
+            "active_plots_count": active_plots_count,
+            "inactive_plots_count": inactive_plots_count,
+            "owners_count": owners_count,
         },
     )
+
 
 
 

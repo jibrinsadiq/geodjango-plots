@@ -146,16 +146,16 @@
     <div class="container">
         <h1>Create Plot by Map</h1>
 
-        <p class="intro">
-            Use this page to draw a polygon directly on the map. You can also switch to marker entry
-            or typed polygon creation using the links below.
-        </p>
+<p class="intro">
+    Use this page to draw a plot polygon directly on the map. You can also return to the workspace
+    or switch to the marker-coordinates creation page using the links below.
+</p>
 
-        <div class="nav-links">
-            <a href="{% url 'plots:create_plot' %}">Create by Markers</a>
-            <a href="{% url 'plots:create_plot_by_marker_coordinates' %}">Create by Polygon</a>
-            <a href="{% url 'plots:create_plot_by_map' %}">Create by Map</a>
-        </div>
+<div class="nav-links">
+    <a href="{% url 'plots:plot_list' %}">Workspace</a>
+    <a href="{% url 'plots:create_plot_by_marker_coordinates' %}">Create by Marker Coordinates</a>
+    <a href="{% url 'plots:create_plot_by_map' %}">Create by Map</a>
+</div>
 
         {% if messages %}
             <div class="messages">
