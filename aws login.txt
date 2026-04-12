@@ -31,7 +31,10 @@ and for logs:
 
 From Git Bash on your laptop, use:
 
-ssh -i /c/Users/a/.ssh/geodjango-plots-key.pem ubuntu@35.179.128.132
+ssh -i /c/Users/a/.ssh/geodjango-plots-key.pem ubuntu@35.179.128.132 -----for  bash
+
+
+ssh -i C:\Users\a\.ssh\geodjango-plots-key.pem ubuntu@3.9.134.76 -----for  windows
 or......
 ssh -i /c/Users/a/.ssh/geodjango-plots-key.pem ubuntu@ec2-35-179-128-132.eu-west-2.compute.amazonaws.com
 

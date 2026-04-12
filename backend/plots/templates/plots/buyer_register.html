@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register as Buyer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
+    <style>
+        :root {
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --border: #d9e3ee;
+            --text: #172033;
+            --muted: #5f6b7a;
+            --primary: #7c3aed;
+            --primary-dark: #6d28d9;
+            --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            --shadow-soft: 0 4px 14px rgba(15, 23, 42, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #f6f9fc 0%, #eef3f9 100%);
+            margin: 0;
+            padding: 0;
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 620px;
+            margin: 40px auto;
+            background: var(--card);
+            padding: 28px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid #e8eef5;
+        }
+
+        h1 {
+            margin-top: 0;
+            text-align: center;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .intro {
+            text-align: center;
+            color: var(--muted);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .top-link {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .top-link a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .top-link a:hover {
+            text-decoration: underline;
+        }
+
+        .messages {
+            margin-bottom: 16px;
+        }
+
+        .message {
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: #eef6ff;
+            border: 1px solid #cfe3ff;
+            color: #1d4e89;
+        }
+
+        .form-card {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: linear-gradient(to bottom, #ffffff 0%, #f9fbfe 100%);
+            padding: 22px;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .form-section {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        input {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #a78bfa;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.10);
+        }
+
+        .errorlist {
+            margin: 6px 0 0 0;
+            color: #b91c1c;
+        }
+
+        .actions {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: var(--primary-dark);
+        }
+
+        .help-text {
+            margin-top: 18px;
+            padding: 14px;
+            border: 1px solid #e5e7eb;
+            background: #fafafa;
+            border-radius: 10px;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Register as Buyer</h1>
+        <p class="intro">
+            Create your buyer account to access the plots platform and browse plot galleries.
+        </p>
+
+        <div class="top-link">
+            <a href="{% url 'plots:plot_list' %}">Back to Workspace</a>
+        </div>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="message">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if form.non_field_errors %}
+            <div class="messages">
+                <div class="message">{{ form.non_field_errors }}</div>
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-card">
+                <div class="form-section">
+                    <label for="{{ form.full_name.id_for_label }}">Full Name</label>
+                    {{ form.full_name }}
+                    {{ form.full_name.errors }}
+                </div>
+
+                <div class="form-section">
+                    <label for="{{ form.email.id_for_label }}">Email</label>
+                    {{ form.email }}
+                    {{ form.email.errors }}
+                </div>
+
+                <div class="form-section">
+                    <label for="{{ form.password1.id_for_label }}">Password</label>
+                    {{ form.password1 }}
+                    {{ form.password1.errors }}
+                </div>
+
+                <div class="form-section">
+                    <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
+                    {{ form.password2 }}
+                    {{ form.password2.errors }}
+                </div>
+
+                <div class="actions">
+                    <button type="submit">Create Buyer Account</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="help-text">
+            After registration, your account will be activated immediately and you will be signed in automatically.
+        </div>
+    </div>
+</body>
+</html>

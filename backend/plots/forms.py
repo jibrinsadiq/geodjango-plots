@@ -1,6 +1,7 @@
 from django import forms
-
 from .models import Plot, Marker, Owner, PlotMedia
+from django.contrib.auth.models import User
+
 
 
 class MarkerForm(forms.ModelForm):
@@ -85,3 +86,38 @@ class PlotMediaForm(forms.ModelForm):
             raise forms.ValidationError("Please choose a file to upload.")
 
         return cleaned_data
+    
+
+
+
+
+
+class BuyerRegistrationForm(forms.Form):
+    full_name = forms.CharField(max_length=150)
+    email = forms.EmailField()
+    password1 = forms.CharField(widget=forms.PasswordInput)
+    password2 = forms.CharField(widget=forms.PasswordInput)
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        if User.objects.filter(username=email).exists():
+            raise forms.ValidationError("An account with this email already exists.")
+        return email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get("password1")
+        password2 = cleaned_data.get("password2")
+
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError("Passwords do not match.")
+
+        return cleaned_data
+
+
+class BuyerLoginForm(forms.Form):
+    email = forms.EmailField()
+    password = forms.CharField(widget=forms.PasswordInput)
+
+
+

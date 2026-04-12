@@ -6,6 +6,10 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.contrib.auth.models import Group, User
+from .forms import BuyerLoginForm, BuyerRegistrationForm
+from django.contrib.auth import authenticate, login, logout
+
 
 from .forms import (
     MarkerForm,
@@ -588,6 +592,106 @@ def delete_plot_media(request, plot_id, media_id):
             "media": media,
         },
     )
+
+
+
+
+
+
+
+def buyer_register(request):
+    return render(request, "plots/buyer_register.html")
+
+
+def buyer_create(request):
+    return render(request, "plots/buyer_create.html")
+
+
+
+
+def buyer_register(request):
+    if request.user.is_authenticated:
+        return redirect("plots:plot_list")
+
+    if request.method == "POST":
+        form = BuyerRegistrationForm(request.POST)
+        if form.is_valid():
+            full_name = form.cleaned_data["full_name"].strip()
+            email = form.cleaned_data["email"].strip().lower()
+            password = form.cleaned_data["password1"]
+
+            first_name = full_name
+            last_name = ""
+
+            if " " in full_name:
+                parts = full_name.split()
+                first_name = parts[0]
+                last_name = " ".join(parts[1:])
+
+            user = User.objects.create_user(
+                username=email,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                is_active=True,
+            )
+
+            buyer_group, _ = Group.objects.get_or_create(name="Buyer")
+            user.groups.add(buyer_group)
+
+            login(request, user)
+
+            messages.success(request, "Buyer account created successfully. You are now logged in.")
+            return redirect("plots:plot_list")
+    else:
+        form = BuyerRegistrationForm()
+
+    return render(
+        request,
+        "plots/buyer_register.html",
+        {
+            "form": form,
+        },
+    )
+
+
+def buyer_login(request):
+    if request.user.is_authenticated:
+        return redirect("plots:plot_list")
+
+    form = BuyerLoginForm(request.POST or None)
+
+    if request.method == "POST":
+        if form.is_valid():
+            email = form.cleaned_data["email"].strip().lower()
+            password = form.cleaned_data["password"]
+
+            user = authenticate(request, username=email, password=password)
+
+            if user is not None:
+                login(request, user)
+                messages.success(request, "You have logged in successfully.")
+                return redirect("plots:plot_list")
+            else:
+                messages.error(request, "Invalid email or password.")
+
+    return render(
+        request,
+        "plots/buyer_login.html",
+        {
+            "form": form,
+        },
+    )
+
+
+def buyer_logout(request):
+    logout(request)
+    messages.success(request, "You have logged out successfully.")
+    return redirect("plots:plot_list")
+
+
+
 
 
 
