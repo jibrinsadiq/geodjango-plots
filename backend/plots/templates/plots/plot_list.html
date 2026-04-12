@@ -492,6 +492,9 @@
     </style>
 </head>
 <body>
+
+
+
     <div class="container">
         <h1>Plots Workspace</h1>
         <p class="intro">
@@ -527,7 +530,7 @@
                     Register as Buyer
                 </a>
                 <a href="{% url 'plots:buyer_login' %}" class="action-btn action-btn-buyer">
-                    Buyer Login
+                    Login
                 </a>
             {% endif %}
         </div>
@@ -543,7 +546,7 @@
         <div class="layout">
             <div class="panel">
                 <div class="panel-header">
-                    <h2>All Plots</h2>
+                    <h2>All Plots ({{ total_plots_count }})</h2>
                     <input
                         type="text"
                         id="plot-search"
@@ -610,18 +613,20 @@
                             </div>
                         </div>
 
-                        <div class="actions-row">
-                            {% if is_agent_user %}
-                                <a href="{% url 'plots:plot_detail' selected_plot.id %}" class="secondary-btn">Open Detail Page</a>
-                            {% endif %}
+<div class="actions-row">
+    {% if is_agent_user %}
+        <a href="{% url 'plots:plot_detail' selected_plot.id %}" class="secondary-btn">Open Detail Page</a>
+    {% endif %}
 
-                            <a href="{% url 'plots:plot_gallery' selected_plot.id %}" class="secondary-btn">Open Gallery</a>
+    {% if request.user.is_authenticated %}
+        <a href="{% url 'plots:plot_gallery' selected_plot.id %}" class="secondary-btn">Open Gallery</a>
+    {% endif %}
 
-                            {% if is_agent_user and selected_plot.is_active and selected_plot.polygon %}
-                                <button type="button" id="start-split-btn" class="primary-btn">Start Split</button>
-                                <button type="button" id="cancel-split-btn" class="danger-btn" style="display:none;">Cancel Split</button>
-                            {% endif %}
-                        </div>
+    {% if is_agent_user and selected_plot.is_active and selected_plot.polygon %}
+        <button type="button" id="start-split-btn" class="primary-btn">Start Split</button>
+        <button type="button" id="cancel-split-btn" class="danger-btn" style="display:none;">Cancel Split</button>
+    {% endif %}
+</div>
                     </div>
                 {% endif %}
 
@@ -698,14 +703,14 @@
     </div>
 
     {{ plot_data|json_script:"plot-data" }}
-    {{ selected_plot_coords|json_script:"selected-plot-coords" }}
+    
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 
     <script>
         const plotData = JSON.parse(document.getElementById("plot-data").textContent);
-        const selectedPlotCoords = JSON.parse(document.getElementById("selected-plot-coords").textContent);
+        
 
         const workspaceMap = L.map('workspace-map').setView([6.5, 3.4], 13);
 
@@ -742,7 +747,7 @@
                 .bindPopup(
                     `<strong>${plot.name}</strong><br>` +
                     `Code: ${plot.code ?? '-'}<br>` +
-                    `Area (sqm): ${plot.area_sqm ?? '-'}<br>` +
+                    `Area (sqm): ${plot.area_sqm ? Number(plot.area_sqm).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}<br>` +
                     `Active: ${plot.is_active}<br>` +
                     `<span style="color:#2563eb;font-weight:bold;">Click polygon to select</span>`
                 );

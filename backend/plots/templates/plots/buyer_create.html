@@ -31,7 +31,7 @@
         }
 
         .container {
-            max-width: 620px;
+            max-width: 660px;
             margin: 40px auto;
             background: var(--card);
             padding: 28px;
@@ -45,6 +45,8 @@
             text-align: center;
             color: var(--text);
             margin-bottom: 8px;
+            font-size: 30px;
+            letter-spacing: 0.2px;
         }
 
         .intro {
@@ -52,6 +54,7 @@
             color: var(--muted);
             margin-bottom: 24px;
             line-height: 1.5;
+            font-size: 14px;
         }
 
         .top-link {
@@ -80,6 +83,7 @@
             background: #eef6ff;
             border: 1px solid #cfe3ff;
             color: #1d4e89;
+            font-size: 14px;
         }
 
         .form-card {
@@ -99,6 +103,7 @@
             font-weight: bold;
             margin-bottom: 6px;
             color: var(--text);
+            font-size: 14px;
         }
 
         input {
@@ -107,6 +112,7 @@
             border: 1px solid #cbd5e1;
             border-radius: 10px;
             font-size: 14px;
+            background: #ffffff;
         }
 
         input:focus {
@@ -118,6 +124,7 @@
         .errorlist {
             margin: 6px 0 0 0;
             color: #b91c1c;
+            font-size: 14px;
         }
 
         .actions {
@@ -134,21 +141,36 @@
             cursor: pointer;
             font-weight: bold;
             font-size: 14px;
+            box-shadow: var(--shadow-soft);
+            transition: 0.2s ease;
         }
 
         button:hover {
             background: var(--primary-dark);
+            transform: translateY(-1px);
         }
 
         .help-text {
             margin-top: 18px;
-            padding: 14px;
+            padding: 14px 16px;
             border: 1px solid #e5e7eb;
-            background: #fafafa;
+            background: linear-gradient(to bottom, #ffffff 0%, #f9fbfe 100%);
             border-radius: 10px;
             color: var(--muted);
             font-size: 14px;
             line-height: 1.5;
+            box-shadow: var(--shadow-soft);
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                margin: 14px;
+                padding: 18px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
         }
     </style>
 </head>
@@ -156,7 +178,7 @@
     <div class="container">
         <h1>Add Buyer</h1>
         <p class="intro">
-            Create a buyer account directly from the platform.
+            Create a buyer account directly from the platform for immediate use.
         </p>
 
         <div class="top-link">

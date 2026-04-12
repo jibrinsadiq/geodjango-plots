@@ -114,10 +114,13 @@ class BuyerRegistrationForm(forms.Form):
 
         return cleaned_data
 
-
 class BuyerLoginForm(forms.Form):
-    email = forms.EmailField()
+    email = forms.CharField(
+        label="Email or Username",
+        max_length=150,
+        widget=forms.TextInput(
+            attrs={"placeholder": "Enter email or username"}
+        ),
+    )
     password = forms.CharField(widget=forms.PasswordInput)
-
-
 

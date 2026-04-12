@@ -374,6 +374,7 @@ def create_plot_by_map(request):
     return render(request, "plots/create_plot_by_map.html", {"form": form})
 
 
+
 def plot_list(request):
     plots = Plot.objects.filter(polygon__isnull=False).order_by("-is_active", "plot_name")
 
@@ -386,6 +387,10 @@ def plot_list(request):
         selected_plot = plots.first()
 
     if request.method == "POST" and "split_plot" in request.POST:
+        if not user_is_agent(request.user):
+            messages.error(request, "You do not have permission to split plots.")
+            return redirect("plots:plot_list")
+
         if not selected_plot:
             messages.error(request, "No plot selected for splitting.")
             return redirect("plots:plot_list")
@@ -523,10 +528,8 @@ def plot_list(request):
             "inactive_plots_count": inactive_plots_count,
             "owners_count": owners_count,
             "is_agent_user": user_is_agent(request.user),
-            "is_buyer_user": user_is_buyer(request.user),
         },
     )
-
 
 
 
@@ -630,8 +633,8 @@ def buyer_create(request):
                 is_active=True,
             )
 
-            buyer_group, _ = Group.objects.get_or_create(name="Buyer")
-            user.groups.add(buyer_group)
+            #buyer_group, _ = Group.objects.get_or_create(name="Buyer")
+            #user.groups.add(buyer_group)
 
             messages.success(request, f"Buyer account created successfully for {email}.")
             return redirect("plots:plot_list")
@@ -677,8 +680,8 @@ def buyer_register(request):
                 is_active=True,
             )
 
-            buyer_group, _ = Group.objects.get_or_create(name="Buyer")
-            user.groups.add(buyer_group)
+            #buyer_group, _ = Group.objects.get_or_create(name="Buyer")
+            #user.groups.add(buyer_group)
 
             login(request, user)
 
@@ -696,25 +699,35 @@ def buyer_register(request):
     )
 
 
+
 def buyer_login(request):
     if request.user.is_authenticated:
         return redirect("plots:plot_list")
 
     form = BuyerLoginForm(request.POST or None)
 
-    if request.method == "POST":
-        if form.is_valid():
-            email = form.cleaned_data["email"].strip().lower()
-            password = form.cleaned_data["password"]
+    if request.method == "POST" and form.is_valid():
+        identifier = form.cleaned_data["email"].strip()
+        password = form.cleaned_data["password"]
 
-            user = authenticate(request, username=email, password=password)
+        user = authenticate(request, username=identifier, password=password)
 
-            if user is not None:
+        if user is None and "@" in identifier:
+            try:
+                matched_user = User.objects.get(email__iexact=identifier)
+                user = authenticate(request, username=matched_user.username, password=password)
+            except User.DoesNotExist:
+                user = None
+
+        if user is not None:
+            if not user.is_active:
+                messages.error(request, "This account is inactive. Please contact support.")
+            else:
                 login(request, user)
                 messages.success(request, "You have logged in successfully.")
                 return redirect("plots:plot_list")
-            else:
-                messages.error(request, "Invalid email or password.")
+        else:
+            messages.error(request, "Invalid email/username or password.")
 
     return render(
         request,
@@ -726,9 +739,11 @@ def buyer_login(request):
 
 
 def buyer_logout(request):
-    logout(request)
-    messages.success(request, "You have logged out successfully.")
+    if request.user.is_authenticated:
+        logout(request)
+        messages.success(request, "You have logged out successfully.")
     return redirect("plots:plot_list")
+
 
 
 
@@ -740,16 +755,13 @@ def user_is_agent(user):
     )
 
 
-def user_is_buyer(user):
-    return user.is_authenticated and user.groups.filter(name="Buyer").exists()
+def user_is_registered_user(user):
+    return user.is_authenticated
 
 
 def user_can_view_gallery(user):
-    return user.is_authenticated and (
-        user.is_superuser
-        or user.groups.filter(name="Agent").exists()
-        or user.groups.filter(name="Buyer").exists()
-    )
+    return user.is_authenticated
+
 
 
 #===================================================================================
