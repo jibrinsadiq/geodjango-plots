@@ -496,6 +496,7 @@ def plot_list(request):
                 "area_sqm": plot.area_sqm,
                 "area_hectares": plot.area_hectares,
                 "is_active": plot.is_active,
+                "availability_status": plot.availability_status,
                 "is_selected": selected_plot.id == plot.id if selected_plot else False,
             }
         )

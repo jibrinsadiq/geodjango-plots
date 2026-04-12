@@ -28,6 +28,10 @@
             --success-text: #166534;
             --danger-bg: #fee2e2;
             --danger-text: #991b1b;
+            --warning-bg: #fef3c7;
+            --warning-text: #92400e;
+            --neutral-bg: #e2e8f0;
+            --neutral-text: #475569;
         }
 
         * {
@@ -160,7 +164,17 @@
             color: var(--success-text);
         }
 
+        .availability-pill.reserved {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+        }
+
         .availability-pill.unavailable {
+            background: var(--neutral-bg);
+            color: var(--neutral-text);
+        }
+
+        .availability-pill.sold {
             background: var(--danger-bg);
             color: var(--danger-text);
         }
@@ -172,6 +186,64 @@
             border-radius: 14px;
             overflow: hidden;
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+        }
+
+        .map-legend {
+            background: rgba(255, 255, 255, 0.96);
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #d7e1ec;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+            color: #334155;
+            font-size: 13px;
+            line-height: 1.4;
+            min-width: 180px;
+        }
+
+        .map-legend-title {
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #172033;
+        }
+
+        .map-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .map-legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .map-legend-swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid rgba(0, 0, 0, 0.18);
+            flex-shrink: 0;
+        }
+
+        .map-legend-swatch.available {
+            background: #22c55e;
+        }
+
+        .map-legend-swatch.reserved {
+            background: #f59e0b;
+        }
+
+        .map-legend-swatch.unavailable {
+            background: #94a3b8;
+        }
+
+        .map-legend-swatch.sold {
+            background: #ef4444;
+        }
+
+        .map-legend-swatch.selected {
+            background: #dbeafe;
+            border: 2px solid #1d4ed8;
         }
 
         .gallery-grid {
@@ -385,7 +457,7 @@
 
                 <div class="summary-card">
                     <strong>Availability:</strong><br>
-                    <span class="availability-pill {% if plot.availability_status == 'available' %}available{% else %}unavailable{% endif %}">
+                    <span class="availability-pill {{ plot.availability_status|default:'unavailable' }}">
                         {{ plot.get_availability_status_display }}
                     </span>
                 </div>
@@ -614,20 +686,121 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const polygonCoords = JSON.parse(document.getElementById("polygon-coords").textContent);
-        const map = L.map('map').setView([6.5, 3.4], 13);
 
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 22,
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+        const satelliteLayer = L.tileLayer(
+            "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            {
+                maxZoom: 22,
+                attribution: "&copy; Esri"
+            }
+        );
+
+        const streetLayer = L.tileLayer(
+            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                maxZoom: 22,
+                attribution: "&copy; OpenStreetMap contributors"
+            }
+        );
+
+        const map = L.map("map", {
+            center: [6.5, 3.4],
+            zoom: 13,
+            layers: [satelliteLayer]
+        });
+
+        const baseMaps = {
+            "Satellite": satelliteLayer,
+            "Street Map": streetLayer
+        };
+
+        L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
+
+        const availabilityLegend = L.control({ position: "topright" });
+
+        availabilityLegend.onAdd = function () {
+            const div = L.DomUtil.create("div", "map-legend");
+            div.innerHTML = `
+                <div class="map-legend-title">Availability Legend</div>
+                <div class="map-legend-item">
+                    <span class="map-legend-swatch available"></span>
+                    <span>Available</span>
+                </div>
+                <div class="map-legend-item">
+                    <span class="map-legend-swatch reserved"></span>
+                    <span>Reserved</span>
+                </div>
+                <div class="map-legend-item">
+                    <span class="map-legend-swatch unavailable"></span>
+                    <span>Unavailable</span>
+                </div>
+                <div class="map-legend-item">
+                    <span class="map-legend-swatch sold"></span>
+                    <span>Sold</span>
+                </div>
+                <div class="map-legend-item">
+                    <span class="map-legend-swatch selected"></span>
+                    <span>Selected plot</span>
+                </div>
+            `;
+            return div;
+        };
+
+        availabilityLegend.addTo(map);
+
+        function getPlotStyle(status) {
+            const normalized = (status || "").toLowerCase();
+
+            const styleMap = {
+                available: {
+                    color: "#15803d",
+                    fillColor: "#22c55e",
+                    fillOpacity: 0.18,
+                    weight: 3
+                },
+                reserved: {
+                    color: "#c2410c",
+                    fillColor: "#f59e0b",
+                    fillOpacity: 0.18,
+                    weight: 3
+                },
+                unavailable: {
+                    color: "#475569",
+                    fillColor: "#94a3b8",
+                    fillOpacity: 0.18,
+                    weight: 3
+                },
+                sold: {
+                    color: "#b91c1c",
+                    fillColor: "#ef4444",
+                    fillOpacity: 0.18,
+                    weight: 3
+                }
+            };
+
+            return styleMap[normalized] || {
+                color: "#1d4ed8",
+                fillColor: "#60a5fa",
+                fillOpacity: 0.15,
+                weight: 3
+            };
+        }
 
         if (polygonCoords && polygonCoords.length > 0) {
             const latLngs = polygonCoords.map(coord => [coord[1], coord[0]]);
+            const styleOptions = getPlotStyle("{{ plot.availability_status|default:''|escapejs }}");
+
             const polygon = L.polygon(latLngs, {
-                weight: 3,
-                color: 'blue',
-                fillOpacity: 0.08
-            }).addTo(map);
+                ...styleOptions,
+                color: "#1d4ed8",
+                weight: 4,
+                fillOpacity: 0.22
+            }).addTo(map).bindPopup(
+                `<strong>{{ plot.plot_name|escapejs }}</strong><br>` +
+                `Code: {{ plot.plot_code|default:'-'|escapejs }}<br>` +
+                `Status: {{ plot.get_availability_status_display|escapejs }}<br>` +
+                `Area (sqm): {{ plot.area_sqm|floatformat:2|intcomma|default:'-' }}`
+            );
 
             map.fitBounds(polygon.getBounds(), { padding: [20, 20] });
         }

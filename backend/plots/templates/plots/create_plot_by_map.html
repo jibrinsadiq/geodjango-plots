@@ -160,6 +160,7 @@
             border: 1px solid #cfd8e3;
             border-radius: 14px;
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+            overflow: hidden;
         }
 
         .errorlist {
@@ -205,6 +206,53 @@
         .hint-list {
             margin: 10px 0 0 18px;
             color: var(--muted);
+        }
+
+        .map-legend {
+            background: rgba(255, 255, 255, 0.96);
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #d7e1ec;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+            color: #334155;
+            font-size: 13px;
+            line-height: 1.4;
+            min-width: 180px;
+        }
+
+        .map-legend-title {
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #172033;
+        }
+
+        .map-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .map-legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .map-legend-swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid rgba(0, 0, 0, 0.18);
+            flex-shrink: 0;
+        }
+
+        .map-legend-swatch.draw {
+            background: #60a5fa;
+            border: 2px solid #1d4ed8;
+        }
+
+        .map-legend-swatch.edit {
+            background: #dbeafe;
+            border: 2px solid #2563eb;
         }
 
         @media (max-width: 900px) {
@@ -308,12 +356,54 @@
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 
     <script>
-        const map = L.map('map').setView([6.5, 3.4], 13);
+        const satelliteLayer = L.tileLayer(
+            "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            {
+                maxZoom: 22,
+                attribution: "&copy; Esri"
+            }
+        );
 
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 22,
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+        const streetLayer = L.tileLayer(
+            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                maxZoom: 22,
+                attribution: "&copy; OpenStreetMap contributors"
+            }
+        );
+
+        const map = L.map("map", {
+            center: [6.5, 3.4],
+            zoom: 13,
+            layers: [satelliteLayer]
+        });
+
+        const baseMaps = {
+            "Satellite": satelliteLayer,
+            "Street Map": streetLayer
+        };
+
+        L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
+
+        const drawingLegend = L.control({ position: "topright" });
+
+        drawingLegend.onAdd = function () {
+            const div = L.DomUtil.create("div", "map-legend");
+            div.innerHTML = `
+                <div class="map-legend-title">Drawing Guide</div>
+                <div class="map-legend-item">
+                    <span class="map-legend-swatch draw"></span>
+                    <span>Draw new plot polygon</span>
+                </div>
+                <div class="map-legend-item">
+                    <span class="map-legend-swatch edit"></span>
+                    <span>Edit or remove before saving</span>
+                </div>
+            `;
+            return div;
+        };
+
+        drawingLegend.addTo(map);
 
         const drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
@@ -343,7 +433,7 @@
             const latlngs = layer.getLatLngs();
 
             if (!latlngs || !latlngs.length || !latlngs[0].length) {
-                document.getElementById('polygon_json').value = '';
+                document.getElementById("polygon_json").value = "";
                 return;
             }
 
@@ -352,7 +442,7 @@
                 lng: point.lng
             }));
 
-            document.getElementById('polygon_json').value = JSON.stringify(coords);
+            document.getElementById("polygon_json").value = JSON.stringify(coords);
         }
 
         map.on(L.Draw.Event.CREATED, function (event) {
@@ -369,14 +459,14 @@
         });
 
         map.on(L.Draw.Event.DELETED, function () {
-            document.getElementById('polygon_json').value = '';
+            document.getElementById("polygon_json").value = "";
         });
 
-        document.getElementById('plot-form').addEventListener('submit', function (e) {
-            const polygonJson = document.getElementById('polygon_json').value;
+        document.getElementById("plot-form").addEventListener("submit", function (e) {
+            const polygonJson = document.getElementById("polygon_json").value;
             if (!polygonJson) {
                 e.preventDefault();
-                alert('Please draw a polygon before saving.');
+                alert("Please draw a polygon before saving.");
             }
         });
     </script>

@@ -393,6 +393,67 @@
             display: none;
         }
 
+
+
+.map-legend {
+    background: rgba(255, 255, 255, 0.96);
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #d7e1ec;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    color: #334155;
+    font-size: 13px;
+    line-height: 1.4;
+    min-width: 180px;
+}
+
+.map-legend-title {
+    font-weight: bold;
+    margin-bottom: 6px;
+    color: #172033;
+}
+
+.map-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.map-legend-item:last-child {
+    margin-bottom: 0;
+}
+
+.map-legend-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    flex-shrink: 0;
+}
+
+.map-legend-swatch.available {
+    background: #22c55e;
+}
+
+.map-legend-swatch.reserved {
+    background: #f59e0b;
+}
+
+.map-legend-swatch.unavailable {
+    background: #94a3b8;
+}
+
+.map-legend-swatch.sold {
+    background: #ef4444;
+}
+
+.map-legend-swatch.selected {
+    background: #dbeafe;
+    border: 2px solid #1d4ed8;
+}
+
+
         .legend-box {
             margin-top: 12px;
             padding: 12px;
@@ -488,6 +549,8 @@
             #workspace-map {
                 height: 340px;
             }
+
+
         }
     </style>
 </head>
@@ -633,6 +696,7 @@
                 <h2>Workspace Map</h2>
                 <div id="workspace-map"></div>
 
+
                 {% if selected_plot %}
                     {% if is_agent_user %}
                         {% if selected_plot.is_active and selected_plot.polygon %}
@@ -702,213 +766,302 @@
         </div>
     </div>
 
-    {{ plot_data|json_script:"plot-data" }}
-    
+{{ plot_data|json_script:"plot-data" }}
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 
-    <script>
-        const plotData = JSON.parse(document.getElementById("plot-data").textContent);
-        
+<script>
+    const plotData = JSON.parse(document.getElementById("plot-data").textContent);
 
-        const workspaceMap = L.map('workspace-map').setView([6.5, 3.4], 13);
-
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const satelliteLayer = L.tileLayer(
+        "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
             maxZoom: 22,
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(workspaceMap);
+            attribution: "&copy; Esri"
+        }
+    );
 
-        const bounds = [];
-        let selectedPolygonLayer = null;
+    const streetLayer = L.tileLayer(
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+            maxZoom: 22,
+            attribution: "&copy; OpenStreetMap contributors"
+        }
+    );
 
-        plotData.forEach(plot => {
-            if (!plot.coords || !plot.coords.length) return;
+    const workspaceMap = L.map("workspace-map", {
+        center: [6.5, 3.4],
+        zoom: 13,
+        layers: [satelliteLayer]
+    });
 
-            const latLngs = plot.coords.map(coord => [coord[1], coord[0]]);
-            bounds.push(...latLngs);
+    const baseMaps = {
+        "Satellite": satelliteLayer,
+        "Street Map": streetLayer
+    };
 
-            let styleOptions = {
-                weight: 2,
-                color: plot.is_active ? 'green' : '#888',
-                fillOpacity: 0.10
+    L.control.layers(baseMaps, null, { collapsed: false }).addTo(workspaceMap);
+
+const availabilityLegend = L.control({ position: "topright" });
+
+availabilityLegend.onAdd = function () {
+    const div = L.DomUtil.create("div", "map-legend");
+    div.innerHTML = `
+        <div class="map-legend-title">Availability Legend</div>
+        <div class="map-legend-item">
+            <span class="map-legend-swatch available"></span>
+            <span>Available</span>
+        </div>
+        <div class="map-legend-item">
+            <span class="map-legend-swatch reserved"></span>
+            <span>Reserved</span>
+        </div>
+        <div class="map-legend-item">
+            <span class="map-legend-swatch unavailable"></span>
+            <span>Unavailable</span>
+        </div>
+        <div class="map-legend-item">
+            <span class="map-legend-swatch sold"></span>
+            <span>Sold</span>
+        </div>
+        <div class="map-legend-item">
+            <span class="map-legend-swatch selected"></span>
+            <span>Selected plot</span>
+        </div>
+    `;
+    return div;
+};
+
+availabilityLegend.addTo(workspaceMap);
+
+
+    const bounds = [];
+    let selectedPolygonLayer = null;
+
+    function getPlotStyle(plot) {
+        const status = (plot.availability_status || "").toLowerCase();
+
+        const styleMap = {
+            available: {
+                color: "#15803d",
+                fillColor: "#22c55e",
+                fillOpacity: 0.18,
+                weight: 2
+            },
+            reserved: {
+                color: "#c2410c",
+                fillColor: "#f59e0b",
+                fillOpacity: 0.18,
+                weight: 2
+            },
+            unavailable: {
+                color: "#475569",
+                fillColor: "#94a3b8",
+                fillOpacity: 0.18,
+                weight: 2
+            },
+            sold: {
+                color: "#b91c1c",
+                fillColor: "#ef4444",
+                fillOpacity: 0.18,
+                weight: 2
+            }
+        };
+
+        return styleMap[status] || {
+            color: "#2563eb",
+            fillColor: "#60a5fa",
+            fillOpacity: 0.15,
+            weight: 2
+        };
+    }
+
+    plotData.forEach(plot => {
+        if (!plot.coords || !plot.coords.length) return;
+
+        const latLngs = plot.coords.map(coord => [coord[1], coord[0]]);
+        bounds.push(...latLngs);
+
+        let styleOptions = getPlotStyle(plot);
+
+        if (plot.is_selected) {
+            styleOptions = {
+                ...styleOptions,
+                color: "#1d4ed8",
+                weight: 4,
+                fillOpacity: 0.22
             };
+        }
 
-            if (plot.is_selected) {
-                styleOptions = {
-                    weight: 4,
-                    color: 'blue',
-                    fillOpacity: 0.12
-                };
-            }
+        const layer = L.polygon(latLngs, styleOptions)
+            .addTo(workspaceMap)
+            .bindPopup(
+                `<strong>${plot.name}</strong><br>` +
+                `Code: ${plot.code ?? "-"}<br>` +
+                `Status: ${plot.availability_status ?? "-"}<br>` +
+                `Area (sqm): ${plot.area_sqm ? Number(plot.area_sqm).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "-"}<br>` +
+                `<span style="color:#2563eb;font-weight:bold;">Click polygon to select</span>`
+            );
 
-            const layer = L.polygon(latLngs, styleOptions)
-                .addTo(workspaceMap)
-                .bindPopup(
-                    `<strong>${plot.name}</strong><br>` +
-                    `Code: ${plot.code ?? '-'}<br>` +
-                    `Area (sqm): ${plot.area_sqm ? Number(plot.area_sqm).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}<br>` +
-                    `Active: ${plot.is_active}<br>` +
-                    `<span style="color:#2563eb;font-weight:bold;">Click polygon to select</span>`
-                );
-
-            layer.on('click', function () {
-                const url = new URL(window.location.href);
-                url.searchParams.set('plot_id', plot.id);
-                window.location.href = url.toString();
-            });
-
-            if (plot.is_selected) {
-                selectedPolygonLayer = layer;
-            }
+        layer.on("click", function () {
+            const url = new URL(window.location.href);
+            url.searchParams.set("plot_id", plot.id);
+            window.location.href = url.toString();
         });
 
-        if (bounds.length > 0) {
-            workspaceMap.fitBounds(bounds, { padding: [20, 20] });
+        if (plot.is_selected) {
+            selectedPolygonLayer = layer;
         }
+    });
 
-        const plotSearchInput = document.getElementById('plot-search');
-        const plotItems = document.querySelectorAll('.plot-item');
-        const emptySearchMessage = document.getElementById('empty-search-message');
+    if (bounds.length > 0) {
+        workspaceMap.fitBounds(bounds, { padding: [20, 20] });
+    }
 
-        if (plotSearchInput) {
-            plotSearchInput.addEventListener('input', function () {
-                const query = this.value.trim().toLowerCase();
-                let visibleCount = 0;
+    const plotSearchInput = document.getElementById("plot-search");
+    const plotItems = document.querySelectorAll(".plot-item");
+    const emptySearchMessage = document.getElementById("empty-search-message");
 
-                plotItems.forEach(item => {
-                    const name = item.dataset.plotName || '';
-                    const code = item.dataset.plotCode || '';
+    if (plotSearchInput) {
+        plotSearchInput.addEventListener("input", function () {
+            const query = this.value.trim().toLowerCase();
+            let visibleCount = 0;
 
-                    const matches = name.includes(query) || code.includes(query);
+            plotItems.forEach(item => {
+                const name = item.dataset.plotName || "";
+                const code = item.dataset.plotCode || "";
+                const matches = name.includes(query) || code.includes(query);
 
-                    item.style.display = matches ? '' : 'none';
+                item.style.display = matches ? "" : "none";
 
-                    if (matches) {
-                        visibleCount += 1;
-                    }
-                });
-
-                if (emptySearchMessage) {
-                    emptySearchMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+                if (matches) {
+                    visibleCount += 1;
                 }
             });
+
+            if (emptySearchMessage) {
+                emptySearchMessage.style.display = visibleCount === 0 ? "block" : "none";
+            }
+        });
+    }
+
+    {% if is_agent_user and selected_plot and selected_plot.is_active and selected_plot.polygon %}
+        const splitPanel = document.getElementById("split-panel");
+        const startSplitBtn = document.getElementById("start-split-btn");
+        const cancelSplitBtn = document.getElementById("cancel-split-btn");
+        const splitForm = document.getElementById("split-form");
+        const polygonJsonField = document.getElementById("polygon_json");
+
+        const drawnItems = new L.FeatureGroup();
+        workspaceMap.addLayer(drawnItems);
+
+        let drawControl = null;
+        let splitMode = false;
+
+        function updateHiddenPolygonField(layer) {
+            const latlngs = layer.getLatLngs();
+
+            if (!latlngs || !latlngs.length || !latlngs[0].length) {
+                polygonJsonField.value = "";
+                return;
+            }
+
+            const coords = latlngs[0].map(point => ({
+                lat: point.lat,
+                lng: point.lng
+            }));
+
+            polygonJsonField.value = JSON.stringify(coords);
         }
 
-        {% if is_agent_user and selected_plot and selected_plot.is_active and selected_plot.polygon %}
-            const splitPanel = document.getElementById('split-panel');
-            const startSplitBtn = document.getElementById('start-split-btn');
-            const cancelSplitBtn = document.getElementById('cancel-split-btn');
-            const splitForm = document.getElementById('split-form');
-            const polygonJsonField = document.getElementById('polygon_json');
+        function enableSplitMode() {
+            if (splitMode) return;
 
-            const drawnItems = new L.FeatureGroup();
-            workspaceMap.addLayer(drawnItems);
+            splitMode = true;
+            splitPanel.classList.remove("hidden");
+            startSplitBtn.style.display = "none";
+            cancelSplitBtn.style.display = "inline-block";
 
-            let drawControl = null;
-            let splitMode = false;
-
-            function updateHiddenPolygonField(layer) {
-                const latlngs = layer.getLatLngs();
-
-                if (!latlngs || !latlngs.length || !latlngs[0].length) {
-                    polygonJsonField.value = '';
-                    return;
-                }
-
-                const coords = latlngs[0].map(point => ({
-                    lat: point.lat,
-                    lng: point.lng
-                }));
-
-                polygonJsonField.value = JSON.stringify(coords);
-            }
-
-            function enableSplitMode() {
-                if (splitMode) return;
-
-                splitMode = true;
-                splitPanel.classList.remove('hidden');
-                startSplitBtn.style.display = 'none';
-                cancelSplitBtn.style.display = 'inline-block';
-
-                drawControl = new L.Control.Draw({
-                    draw: {
-                        polyline: false,
-                        rectangle: false,
-                        circle: false,
-                        marker: false,
-                        circlemarker: false,
-                        polygon: {
-                            allowIntersection: false,
-                            showArea: true
-                        }
-                    },
-                    edit: {
-                        featureGroup: drawnItems,
-                        edit: true,
-                        remove: true
+            drawControl = new L.Control.Draw({
+                draw: {
+                    polyline: false,
+                    rectangle: false,
+                    circle: false,
+                    marker: false,
+                    circlemarker: false,
+                    polygon: {
+                        allowIntersection: false,
+                        showArea: true
                     }
-                });
-
-                workspaceMap.addControl(drawControl);
-
-                if (selectedPolygonLayer) {
-                    selectedPolygonLayer.openPopup();
+                },
+                edit: {
+                    featureGroup: drawnItems,
+                    edit: true,
+                    remove: true
                 }
+            });
+
+            workspaceMap.addControl(drawControl);
+
+            if (selectedPolygonLayer) {
+                selectedPolygonLayer.openPopup();
             }
+        }
 
-            function disableSplitMode() {
-                splitMode = false;
-                splitPanel.classList.add('hidden');
-                startSplitBtn.style.display = 'inline-block';
-                cancelSplitBtn.style.display = 'none';
-                polygonJsonField.value = '';
-                drawnItems.clearLayers();
+        function disableSplitMode() {
+            splitMode = false;
+            splitPanel.classList.add("hidden");
+            startSplitBtn.style.display = "inline-block";
+            cancelSplitBtn.style.display = "none";
+            polygonJsonField.value = "";
+            drawnItems.clearLayers();
 
-                if (drawControl) {
-                    workspaceMap.removeControl(drawControl);
-                    drawControl = null;
-                }
+            if (drawControl) {
+                workspaceMap.removeControl(drawControl);
+                drawControl = null;
             }
+        }
 
-            workspaceMap.on(L.Draw.Event.CREATED, function (event) {
-                if (!splitMode) return;
+        workspaceMap.on(L.Draw.Event.CREATED, function (event) {
+            if (!splitMode) return;
 
-                drawnItems.clearLayers();
-                const layer = event.layer;
-                drawnItems.addLayer(layer);
+            drawnItems.clearLayers();
+            const layer = event.layer;
+            drawnItems.addLayer(layer);
+            updateHiddenPolygonField(layer);
+        });
+
+        workspaceMap.on(L.Draw.Event.EDITED, function (event) {
+            if (!splitMode) return;
+
+            event.layers.eachLayer(function (layer) {
                 updateHiddenPolygonField(layer);
             });
+        });
 
-            workspaceMap.on(L.Draw.Event.EDITED, function (event) {
-                if (!splitMode) return;
+        workspaceMap.on(L.Draw.Event.DELETED, function () {
+            if (!splitMode) return;
+            polygonJsonField.value = "";
+        });
 
-                event.layers.eachLayer(function (layer) {
-                    updateHiddenPolygonField(layer);
-                });
-            });
+        startSplitBtn.addEventListener("click", function () {
+            enableSplitMode();
+        });
 
-            workspaceMap.on(L.Draw.Event.DELETED, function () {
-                if (!splitMode) return;
-                polygonJsonField.value = '';
-            });
+        cancelSplitBtn.addEventListener("click", function () {
+            disableSplitMode();
+        });
 
-            startSplitBtn.addEventListener('click', function () {
-                enableSplitMode();
-            });
+        splitForm.addEventListener("submit", function (e) {
+            if (!polygonJsonField.value) {
+                e.preventDefault();
+                alert("Please draw a cut polygon before saving.");
+            }
+        });
+    {% endif %}
+</script>
 
-            cancelSplitBtn.addEventListener('click', function () {
-                disableSplitMode();
-            });
 
-            splitForm.addEventListener('submit', function (e) {
-                if (!polygonJsonField.value) {
-                    e.preventDefault();
-                    alert('Please draw a cut polygon before saving.');
-                }
-            });
-        {% endif %}
-    </script>
 </body>
 </html>

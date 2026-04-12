@@ -26,6 +26,10 @@
             --success-text: #166534;
             --danger-bg: #fee2e2;
             --danger-text: #991b1b;
+            --warning-bg: #fef3c7;
+            --warning-text: #92400e;
+            --neutral-bg: #e2e8f0;
+            --neutral-text: #475569;
             --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
             --shadow-soft: 0 4px 14px rgba(15, 23, 42, 0.06);
         }
@@ -226,6 +230,70 @@
             margin-top: 10px;
             border: 1px solid #cbd5e1;
             border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .map-legend {
+            background: rgba(255, 255, 255, 0.96);
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #d7e1ec;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+            color: #334155;
+            font-size: 13px;
+            line-height: 1.4;
+            min-width: 180px;
+        }
+
+        .map-legend-title {
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #172033;
+        }
+
+        .map-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .map-legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .map-legend-swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid rgba(0, 0, 0, 0.18);
+            flex-shrink: 0;
+        }
+
+        .map-legend-swatch.available {
+            background: #22c55e;
+        }
+
+        .map-legend-swatch.reserved {
+            background: #f59e0b;
+        }
+
+        .map-legend-swatch.unavailable {
+            background: #94a3b8;
+        }
+
+        .map-legend-swatch.sold {
+            background: #ef4444;
+        }
+
+        .map-legend-swatch.selected {
+            background: #dbeafe;
+            border: 2px solid #1d4ed8;
+        }
+
+        .map-legend-swatch.marker {
+            background: #2563eb;
+            border-radius: 999px;
         }
 
         .note {
@@ -743,40 +811,172 @@
         const markerData = JSON.parse(document.getElementById("marker-data").textContent);
         const childPlotData = JSON.parse(document.getElementById("child-plot-data").textContent);
 
-        const map = L.map('map').setView([6.5, 3.4], 13);
+        const satelliteLayer = L.tileLayer(
+            "https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            {
+                maxZoom: 22,
+                attribution: "&copy; Esri"
+            }
+        );
 
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 22,
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+        const streetLayer = L.tileLayer(
+            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                maxZoom: 22,
+                attribution: "&copy; OpenStreetMap contributors"
+            }
+        );
+
+        const map = L.map("map", {
+            center: [6.5, 3.4],
+            zoom: 13,
+            layers: [satelliteLayer]
+        });
+
+        const baseMaps = {
+            "Satellite": satelliteLayer,
+            "Street Map": streetLayer
+        };
+
+        L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
+
+        const mapLegend = L.control({ position: "topright" });
+
+        mapLegend.onAdd = function () {
+            const div = L.DomUtil.create("div", "map-legend");
+            div.innerHTML = `
+                <div class="map-legend-title">Map Legend</div>
+                <div class="map-legend-item">
+                    <span class="map-legend-swatch available"></span>
+                    <span>Available</span>
+                </div>
+                <div class="map-legend-item">
+                    <span class="map-legend-swatch reserved"></span>
+                    <span>Reserved</span>
+                </div>
+                <div class="map-legend-item">
+                    <span class="map-legend-swatch unavailable"></span>
+                    <span>Unavailable</span>
+                </div>
+                <div class="map-legend-item">
+                    <span class="map-legend-swatch sold"></span>
+                    <span>Sold</span>
+                </div>
+                <div class="map-legend-item">
+                    <span class="map-legend-swatch selected"></span>
+                    <span>Main plot</span>
+                </div>
+                <div class="map-legend-item">
+                    <span class="map-legend-swatch marker"></span>
+                    <span>Markers</span>
+                </div>
+            `;
+            return div;
+        };
+
+        mapLegend.addTo(map);
+
+        function formatNumber(value, decimals) {
+            if (value === null || value === undefined || value === "") {
+                return "-";
+            }
+
+            const num = Number(value);
+            if (Number.isNaN(num)) {
+                return "-";
+            }
+
+            return num.toLocaleString(undefined, {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+        }
+
+        function getPlotStyle(status, isMain = false) {
+            const normalized = (status || "").toLowerCase();
+
+            const styleMap = {
+                available: {
+                    color: "#15803d",
+                    fillColor: "#22c55e",
+                    fillOpacity: 0.18,
+                    weight: 2
+                },
+                reserved: {
+                    color: "#c2410c",
+                    fillColor: "#f59e0b",
+                    fillOpacity: 0.18,
+                    weight: 2
+                },
+                unavailable: {
+                    color: "#475569",
+                    fillColor: "#94a3b8",
+                    fillOpacity: 0.18,
+                    weight: 2
+                },
+                sold: {
+                    color: "#b91c1c",
+                    fillColor: "#ef4444",
+                    fillOpacity: 0.18,
+                    weight: 2
+                }
+            };
+
+            const baseStyle = styleMap[normalized] || {
+                color: "#2563eb",
+                fillColor: "#60a5fa",
+                fillOpacity: 0.15,
+                weight: 2
+            };
+
+            if (isMain) {
+                return {
+                    ...baseStyle,
+                    color: "#1d4ed8",
+                    weight: 4,
+                    fillOpacity: 0.22
+                };
+            }
+
+            return baseStyle;
+        }
 
         const bounds = [];
 
         if (polygonCoords && polygonCoords.length > 0) {
             const latLngs = polygonCoords.map(coord => [coord[1], coord[0]]);
-            L.polygon(latLngs, {
-                weight: 3,
-                color: 'blue',
-                fillOpacity: 0.08
-            }).addTo(map).bindPopup(`Selected Plot: {{ plot.plot_name|escapejs }}`);
+            const mainPlotStyle = getPlotStyle("{{ plot.availability_status|default:''|escapejs }}", true);
+
+            L.polygon(latLngs, mainPlotStyle)
+                .addTo(map)
+                .bindPopup(
+                    `<strong>{{ plot.plot_name|escapejs }}</strong><br>` +
+                    `Code: {{ plot.plot_code|default:'-'|escapejs }}<br>` +
+                    `Status: {{ plot.get_availability_status_display|escapejs }}<br>` +
+                    `Area (sqm): {{ plot.area_sqm|floatformat:2|intcomma|default:'-' }}`
+                );
+
             bounds.push(...latLngs);
         }
 
         if (childPlotData && childPlotData.length > 0) {
             childPlotData.forEach(child => {
+                if (!child.coords || !child.coords.length) return;
+
                 const latLngs = child.coords.map(coord => [coord[1], coord[0]]);
                 bounds.push(...latLngs);
 
-                L.polygon(latLngs, {
-                    weight: 2,
-                    color: 'green',
-                    fillOpacity: 0.15
-                }).addTo(map).bindPopup(
-                    `<strong>Derived Plot:</strong> ${child.name}<br>` +
-                    `Area (sqm): ${child.area_sqm ?? '-'}<br>` +
-                    `Area (hectares): ${child.area_hectares ?? '-'}<br>` +
-                    `Active: ${child.is_active}`
-                );
+                const childStyle = getPlotStyle(child.availability_status || "", false);
+
+                L.polygon(latLngs, childStyle)
+                    .addTo(map)
+                    .bindPopup(
+                        `<strong>Derived Plot:</strong> ${child.name}<br>` +
+                        `Area (sqm): ${formatNumber(child.area_sqm, 2)}<br>` +
+                        `Area (hectares): ${formatNumber(child.area_hectares, 4)}<br>` +
+                        `Status: ${child.availability_status || '-'}<br>` +
+                        `Active: ${child.is_active ? 'Yes' : 'No'}`
+                    );
             });
         }
 
