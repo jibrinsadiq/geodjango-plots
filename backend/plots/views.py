@@ -598,13 +598,53 @@ def delete_plot_media(request, plot_id, media_id):
 
 
 
+from django.contrib import messages
+from django.contrib.auth.models import Group, User
+from django.shortcuts import redirect, render
 
-def buyer_register(request):
-    return render(request, "plots/buyer_register.html")
+from .forms import BuyerRegistrationForm
 
 
 def buyer_create(request):
-    return render(request, "plots/buyer_create.html")
+    if request.method == "POST":
+        form = BuyerRegistrationForm(request.POST)
+        if form.is_valid():
+            full_name = form.cleaned_data["full_name"].strip()
+            email = form.cleaned_data["email"].strip().lower()
+            password = form.cleaned_data["password1"]
+
+            first_name = full_name
+            last_name = ""
+
+            if " " in full_name:
+                parts = full_name.split()
+                first_name = parts[0]
+                last_name = " ".join(parts[1:])
+
+            user = User.objects.create_user(
+                username=email,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                is_active=True,
+            )
+
+            buyer_group, _ = Group.objects.get_or_create(name="Buyer")
+            user.groups.add(buyer_group)
+
+            messages.success(request, f"Buyer account created successfully for {email}.")
+            return redirect("plots:plot_list")
+    else:
+        form = BuyerRegistrationForm()
+
+    return render(
+        request,
+        "plots/buyer_create.html",
+        {
+            "form": form,
+        },
+    )
 
 
 
