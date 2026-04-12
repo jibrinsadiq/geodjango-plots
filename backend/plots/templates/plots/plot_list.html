@@ -103,65 +103,70 @@
             font-size: 14px;
         }
 
+        .top-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
 
-.top-actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.action-btn {
-    display: inline-block;
-    padding: 10px 15px;
-    text-decoration: none;
-    border-radius: 10px;
-    font-weight: bold;
-    font-size: 14px;
-    box-shadow: var(--shadow-soft);
-    transition: 0.2s ease;
-}
-
-.action-btn:hover {
-    transform: translateY(-1px);
-}
-
-.action-btn-primary {
-    background: var(--primary);
-    color: white;
-}
-
-.action-btn-primary:hover {
-    background: var(--primary-dark);
-}
-
-.action-btn-owner {
-    background: #0f766e;
-    color: white;
-}
-
-.action-btn-owner:hover {
-    background: #115e59;
-}
-
-
-        .top-actions a {
-            display: inline-block;
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             padding: 10px 15px;
             text-decoration: none;
             border-radius: 10px;
             font-weight: bold;
-            background: var(--primary);
-            color: white;
             font-size: 14px;
             box-shadow: var(--shadow-soft);
             transition: 0.2s ease;
         }
 
-        .top-actions a:hover {
-            background: var(--primary-dark);
+        .action-btn:hover {
             transform: translateY(-1px);
+        }
+
+        .action-btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .action-btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .action-btn-owner {
+            background: #0f766e;
+            color: white;
+        }
+
+        .action-btn-owner:hover {
+            background: #115e59;
+        }
+
+        .action-btn-buyer {
+            background: #7c3aed;
+            color: white;
+        }
+
+        .action-btn-buyer:hover {
+            background: #6d28d9;
+        }
+
+        .action-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 7px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.22);
+            color: white;
         }
 
         .layout {
@@ -278,63 +283,61 @@
             margin-top: 10px;
         }
 
-        
-.selected-plot-box {
-    border: 1px solid #cfdced;
-    border-radius: 14px;
-    background: linear-gradient(to right, #f8fbff 0%, #eef4ff 100%);
-    padding: 8px 10px;
-    margin-bottom: 12px;
-}
+        .selected-plot-box {
+            border: 1px solid #cfdced;
+            border-radius: 14px;
+            background: linear-gradient(to right, #f8fbff 0%, #eef4ff 100%);
+            padding: 8px 10px;
+            margin-bottom: 12px;
+        }
 
-.selected-plot-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(140px, 1fr));
-    gap: 6px;
-    margin-top: 4px;
-}
+        .selected-plot-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(140px, 1fr));
+            gap: 6px;
+            margin-top: 4px;
+        }
 
-.selected-plot-item {
-    border: 1px solid #dce6f2;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.82);
-    padding: 5px 7px;
-    font-size: 13px;
-    min-height: auto;
-    line-height: 1.25;
-}
+        .selected-plot-item {
+            border: 1px solid #dce6f2;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.82);
+            padding: 5px 7px;
+            font-size: 13px;
+            min-height: auto;
+            line-height: 1.25;
+        }
 
-.selected-plot-item strong {
-    display: block;
-    margin-bottom: 2px;
-    color: #334155;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    line-height: 1.1;
-}
+        .selected-plot-item strong {
+            display: block;
+            margin-bottom: 2px;
+            color: #334155;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            line-height: 1.1;
+        }
 
-.actions-row {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 8px;
-}
+        .actions-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
 
-.actions-row a,
-.actions-row button {
-    display: inline-block;
-    padding: 7px 10px;
-    border-radius: 10px;
-    font-weight: bold;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    transition: 0.2s ease;
-}
-
+        .actions-row a,
+        .actions-row button {
+            display: inline-block;
+            padding: 7px 10px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s ease;
+        }
 
         .actions-row a:hover,
         .actions-row button:hover {
@@ -485,18 +488,6 @@
             #workspace-map {
                 height: 340px;
             }
-
-
-.action-btn-buyer {
-    background: #7c3aed;
-    color: white;
-}
-
-.action-btn-buyer:hover {
-    background: #6d28d9;
-}
-
-
         }
     </style>
 </head>
@@ -507,42 +498,39 @@
             Select a plot, review its details, view all plots on one shared map, and split the selected plot directly from the workspace.
         </p>
 
+        <div class="top-actions">
+            {% if is_agent_user %}
+                <a href="{% url 'plots:create_plot_by_marker_coordinates' %}" class="action-btn action-btn-primary">
+                    Create by Marker Coordinates
+                </a>
+                <a href="{% url 'plots:create_plot_by_map' %}" class="action-btn action-btn-primary">
+                    Create by Map
+                </a>
+                <a href="{% url 'plots:owner_list' %}" class="action-btn action-btn-owner">
+                    Owners
+                    <span class="action-count">{{ owners_count }}</span>
+                </a>
+                <a href="{% url 'plots:owner_create' %}" class="action-btn action-btn-owner">
+                    Add Owner
+                </a>
+                <a href="{% url 'plots:buyer_create' %}" class="action-btn action-btn-buyer">
+                    Add Buyer
+                </a>
+            {% endif %}
 
-
-<div class="top-actions">
-    <a href="{% url 'plots:create_plot_by_marker_coordinates' %}" class="action-btn action-btn-primary">
-        Create by Marker Coordinates
-    </a>
-    <a href="{% url 'plots:create_plot_by_map' %}" class="action-btn action-btn-primary">
-        Create by Map
-    </a>
-    <a href="{% url 'plots:owner_list' %}" class="action-btn action-btn-owner">
-        Owners
-        <span class="action-count">{{ owners_count }}</span>
-    </a>
-    <a href="{% url 'plots:owner_create' %}" class="action-btn action-btn-owner">
-        Add Owner
-    </a>
-    <a href="{% url 'plots:buyer_create' %}" class="action-btn action-btn-buyer">
-        Add Buyer
-    </a>
-
-    {% if request.user.is_authenticated %}
-        <a href="{% url 'plots:buyer_logout' %}" class="action-btn action-btn-buyer">
-            Logout
-        </a>
-    {% else %}
-        <a href="{% url 'plots:buyer_register' %}" class="action-btn action-btn-buyer">
-            Register as Buyer
-        </a>
-        <a href="{% url 'plots:buyer_login' %}" class="action-btn action-btn-buyer">
-            Buyer Login
-        </a>
-    {% endif %}
-</div>
-
-
-
+            {% if request.user.is_authenticated %}
+                <a href="{% url 'plots:buyer_logout' %}" class="action-btn action-btn-buyer">
+                    Logout
+                </a>
+            {% else %}
+                <a href="{% url 'plots:buyer_register' %}" class="action-btn action-btn-buyer">
+                    Register as Buyer
+                </a>
+                <a href="{% url 'plots:buyer_login' %}" class="action-btn action-btn-buyer">
+                    Buyer Login
+                </a>
+            {% endif %}
+        </div>
 
         {% if messages %}
             <div class="messages">
@@ -610,11 +598,11 @@
                             </div>
                             <div class="selected-plot-item">
                                 <strong>Area (sqm)</strong>
-                                {{ selected_plot.area_sqm|floatformat:2|default:"-" }}
+                                {{ selected_plot.area_sqm|floatformat:2|intcomma|default:"-" }}
                             </div>
                             <div class="selected-plot-item">
                                 <strong>Area (hectares)</strong>
-                                {{ selected_plot.area_hectares|floatformat:4|default:"-" }}
+                                {{ selected_plot.area_hectares|floatformat:4|intcomma|default:"-" }}
                             </div>
                             <div class="selected-plot-item">
                                 <strong>Source Plot</strong>
@@ -623,10 +611,13 @@
                         </div>
 
                         <div class="actions-row">
-                            <a href="{% url 'plots:plot_detail' selected_plot.id %}" class="secondary-btn">Open Detail Page</a>
+                            {% if is_agent_user %}
+                                <a href="{% url 'plots:plot_detail' selected_plot.id %}" class="secondary-btn">Open Detail Page</a>
+                            {% endif %}
+
                             <a href="{% url 'plots:plot_gallery' selected_plot.id %}" class="secondary-btn">Open Gallery</a>
 
-                            {% if selected_plot.is_active and selected_plot.polygon %}
+                            {% if is_agent_user and selected_plot.is_active and selected_plot.polygon %}
                                 <button type="button" id="start-split-btn" class="primary-btn">Start Split</button>
                                 <button type="button" id="cancel-split-btn" class="danger-btn" style="display:none;">Cancel Split</button>
                             {% endif %}
@@ -638,36 +629,38 @@
                 <div id="workspace-map"></div>
 
                 {% if selected_plot %}
-                    {% if selected_plot.is_active and selected_plot.polygon %}
-                        <div class="split-panel hidden" id="split-panel">
-                            <h3>Split Selected Plot</h3>
-                            <p class="note">
-                                Split mode is active. Draw one cut polygon on the same workspace map, then save.
-                            </p>
+                    {% if is_agent_user %}
+                        {% if selected_plot.is_active and selected_plot.polygon %}
+                            <div class="split-panel hidden" id="split-panel">
+                                <h3>Split Selected Plot</h3>
+                                <p class="note">
+                                    Split mode is active. Draw one cut polygon on the same workspace map, then save.
+                                </p>
 
-                            <form method="post" id="split-form">
-                                {% csrf_token %}
-                                {{ split_form.as_p }}
-                                <input type="hidden" name="polygon_json" id="polygon_json">
+                                <form method="post" id="split-form">
+                                    {% csrf_token %}
+                                    {{ split_form.as_p }}
+                                    <input type="hidden" name="polygon_json" id="polygon_json">
 
-                                <div class="legend-box">
-                                    <div><strong>Legend</strong></div>
-                                    <div class="note">Selected plot: thick blue outline</div>
-                                    <div class="note">Other active plots: grey or green</div>
-                                    <div class="note">Cut polygon: draw layer on the same map</div>
-                                </div>
+                                    <div class="legend-box">
+                                        <div><strong>Legend</strong></div>
+                                        <div class="note">Selected plot: thick blue outline</div>
+                                        <div class="note">Other active plots: grey or green</div>
+                                        <div class="note">Cut polygon: draw layer on the same map</div>
+                                    </div>
 
-                                <div style="margin-top: 15px;">
-                                    <button type="submit" name="split_plot" class="primary-btn">Split Selected Plot</button>
-                                </div>
-                            </form>
-                        </div>
-                    {% else %}
-                        <div class="split-panel">
-                            <p class="note">
-                                This selected plot cannot be split because it is either inactive or has no polygon.
-                            </p>
-                        </div>
+                                    <div style="margin-top: 15px;">
+                                        <button type="submit" name="split_plot" class="primary-btn">Split Selected Plot</button>
+                                    </div>
+                                </form>
+                            </div>
+                        {% else %}
+                            <div class="split-panel">
+                                <p class="note">
+                                    This selected plot cannot be split because it is either inactive or has no polygon.
+                                </p>
+                            </div>
+                        {% endif %}
                     {% endif %}
 
                     <div class="section-block">
@@ -687,7 +680,7 @@
                                         <tr>
                                             <td>{{ child.plot_name }}</td>
                                             <td>{{ child.plot_code|default:"-" }}</td>
-                                            <td>{{ child.area_sqm|floatformat:2 }}</td>
+                                            <td>{{ child.area_sqm|floatformat:2|intcomma }}</td>
                                             <td>{% if child.is_active %}Active{% else %}Inactive{% endif %}</td>
                                         </tr>
                                     {% endfor %}
@@ -797,7 +790,7 @@
             });
         }
 
-        {% if selected_plot and selected_plot.is_active and selected_plot.polygon %}
+        {% if is_agent_user and selected_plot and selected_plot.is_active and selected_plot.polygon %}
             const splitPanel = document.getElementById('split-panel');
             const startSplitBtn = document.getElementById('start-split-btn');
             const cancelSplitBtn = document.getElementById('cancel-split-btn');

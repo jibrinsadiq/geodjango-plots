@@ -11,6 +11,12 @@ from .forms import BuyerLoginForm, BuyerRegistrationForm
 from django.contrib.auth import authenticate, login, logout
 
 
+
+
+
+
+
+
 from .forms import (
     MarkerForm,
     PlotMarkerCoordinatesForm,
@@ -516,6 +522,8 @@ def plot_list(request):
             "active_plots_count": active_plots_count,
             "inactive_plots_count": inactive_plots_count,
             "owners_count": owners_count,
+            "is_agent_user": user_is_agent(request.user),
+            "is_buyer_user": user_is_buyer(request.user),
         },
     )
 
@@ -595,14 +603,6 @@ def delete_plot_media(request, plot_id, media_id):
 
 
 
-
-
-
-from django.contrib import messages
-from django.contrib.auth.models import Group, User
-from django.shortcuts import redirect, render
-
-from .forms import BuyerRegistrationForm
 
 
 def buyer_create(request):
@@ -732,6 +732,24 @@ def buyer_logout(request):
 
 
 
+#========== helper functions===
+
+def user_is_agent(user):
+    return user.is_authenticated and (
+        user.is_superuser or user.groups.filter(name="Agent").exists()
+    )
 
 
+def user_is_buyer(user):
+    return user.is_authenticated and user.groups.filter(name="Buyer").exists()
 
+
+def user_can_view_gallery(user):
+    return user.is_authenticated and (
+        user.is_superuser
+        or user.groups.filter(name="Agent").exists()
+        or user.groups.filter(name="Buyer").exists()
+    )
+
+
+#===================================================================================
