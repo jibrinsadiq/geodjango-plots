@@ -359,6 +359,75 @@
             box-shadow: var(--shadow-soft);
         }
 
+        .document-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .document-card {
+            border: 1px solid #dbe4f0;
+            border-radius: 12px;
+            background: #ffffff;
+            padding: 14px;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .document-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .document-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--text);
+        }
+
+        .document-meta {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .document-badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #3730a3;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid #c7d2fe;
+            white-space: nowrap;
+        }
+
+        .document-actions {
+            margin-top: 10px;
+        }
+
+        .document-actions a {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+            box-shadow: var(--shadow-soft);
+            transition: 0.2s ease;
+        }
+
+        .document-actions a:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
         video {
             width: 100%;
             max-width: 760px;
@@ -432,7 +501,7 @@
     <div class="container">
         <h1>Gallery: {{ plot.plot_name }}</h1>
         <p class="intro">
-            Browse the visual presentation of this plot, including mapped location, directional images, and any available video.
+            Browse the visual presentation of this plot, including mapped location, directional images, available video, and uploaded documents.
         </p>
 
         <div class="actions">
@@ -475,6 +544,11 @@
                 <div class="summary-card">
                     <strong>Cost:</strong><br>
                     {{ plot.cost|floatformat:2|intcomma|default:"-" }}
+                </div>
+
+                <div class="summary-card">
+                    <strong>Documents:</strong><br>
+                    {{ document_items|length }}
                 </div>
             </div>
         </div>
@@ -672,6 +746,36 @@
                 </div>
             {% else %}
                 <p class="note">No video uploaded.</p>
+            {% endif %}
+        </div>
+
+        <div class="section">
+            <h2>Documents</h2>
+            {% if document_items %}
+                <div class="document-list">
+                    {% for item in document_items %}
+                        <div class="document-card">
+                            <div class="document-top">
+                                <div>
+                                    <div class="document-title">
+                                        {{ item.title|default:item.get_document_type_display }}
+                                    </div>
+                                    <div class="document-meta">
+                                        Category: {{ item.get_document_type_display }}<br>
+                                        Uploaded: {{ item.uploaded_at|date:"Y-m-d H:i" }}
+                                    </div>
+                                </div>
+                                <span class="document-badge">{{ item.get_document_type_display }}</span>
+                            </div>
+
+                            <div class="document-actions">
+                                <a href="{{ item.file.url }}" target="_blank">Open Document</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="note">No documents uploaded.</p>
             {% endif %}
         </div>
     </div>

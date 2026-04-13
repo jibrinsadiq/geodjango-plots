@@ -13,6 +13,7 @@ from .views import (
     buyer_create,
     buyer_login,
     buyer_logout,
+    delete_plot_document,
 
 )
 
@@ -37,6 +38,11 @@ urlpatterns = [
     path("buyers/create/", buyer_create, name="buyer_create"),
     path("buyers/login/", buyer_login, name="buyer_login"),
     path("buyers/logout/", buyer_logout, name="buyer_logout"),
+    path(
+    "<int:plot_id>/delete-document/<int:document_id>/",
+    delete_plot_document,
+    name="delete_plot_document",
+),
    
 
 

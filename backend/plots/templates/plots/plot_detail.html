@@ -203,6 +203,32 @@
             transform: translateY(-1px);
         }
 
+
+
+        .upload-help {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: #f8fbff;
+            border: 1px solid #dbe7f5;
+            color: #475569;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .doc-badge {
+            display: inline-block;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: #eef2ff;
+            color: #3730a3;
+            font-weight: bold;
+            font-size: 12px;
+            border: 1px solid #c7d2fe;
+        }
+
+
+
         table {
             border-collapse: collapse;
             width: 100%;
@@ -409,7 +435,7 @@
     <div class="container">
         <h1>Plot: {{ plot.plot_name }}</h1>
         <p class="intro">
-            View one plot, its owner, sales details, markers, geometry, related derived plots, and media.
+            View one plot, its owner, sales details, markers, geometry, related derived plots, media, and documents.
         </p>
 
         {% if messages %}
@@ -487,6 +513,11 @@
                 <div class="summary-card">
                     <strong>Videos:</strong><br>
                     {{ plot.video_count }}
+                </div>
+
+                <div class="summary-card">
+                    <strong>Documents:</strong><br>
+                    {{ document_items|length }}
                 </div>
 
                 <div class="summary-card">
@@ -668,6 +699,90 @@
                 <p class="note">No media uploaded yet.</p>
             {% endif %}
         </div>
+
+        <div class="section">
+            <h2>Upload Documents</h2>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="owner-form-grid">
+                    <div class="owner-form-field">
+                        {{ document_form.document_type.label_tag }}
+                        {{ document_form.document_type }}
+                        {{ document_form.document_type.errors }}
+                    </div>
+
+                    <div class="owner-form-field owner-full-width">
+                        {{ document_form.title.label_tag }}
+                        {{ document_form.title }}
+                        {{ document_form.title.errors }}
+                    </div>
+
+                    <div class="owner-form-field owner-full-width">
+                        {{ document_form.file.label_tag }}
+                        {{ document_form.file }}
+                        {{ document_form.file.errors }}
+                    </div>
+                </div>
+
+                {% if document_form.non_field_errors %}
+                    <div class="note" style="color:#991b1b; margin-top:10px;">
+                        {{ document_form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="owner-form-actions">
+                    <button type="submit" name="upload_document">Upload Document</button>
+                </div>
+            </form>
+
+            <div class="upload-help">
+                Upload plot documents by category. Each category can have multiple files.
+                Suggested categories: Sales Agreement, Deed of Assignment, Power of Attorney, and Other Document.
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Uploaded Documents</h2>
+
+            {% if document_items %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Category</th>
+                            <th>Title</th>
+                            <th>Uploaded</th>
+                            <th>Open</th>
+                            <th>Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in document_items %}
+                            <tr>
+                                <td style="width: 120px;">
+                                    <span class="doc-badge">DOCUMENT</span>
+                                </td>
+                                <td>{{ item.get_document_type_display }}</td>
+                                <td>{{ item.title|default:"-" }}</td>
+                                <td>{{ item.uploaded_at|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    <a class="inline-link" href="{{ item.file.url }}" target="_blank">View File</a>
+                                </td>
+                                <td>
+                                    <a class="danger-link" href="{% url 'plots:delete_plot_document' plot.id item.id %}">Delete</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="note">No documents uploaded yet.</p>
+            {% endif %}
+        </div>
+
+
 
         <div class="section">
             <h2>Plot Map</h2>

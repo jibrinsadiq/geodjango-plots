@@ -1,7 +1,6 @@
 from django import forms
-from .models import Plot, Marker, Owner, PlotMedia
+from .models import Plot, Marker, Owner, PlotMedia, PlotDocument
 from django.contrib.auth.models import User
-
 
 
 class MarkerForm(forms.ModelForm):
@@ -123,4 +122,22 @@ class BuyerLoginForm(forms.Form):
         ),
     )
     password = forms.CharField(widget=forms.PasswordInput)
+
+
+
+
+
+class PlotDocumentForm(forms.ModelForm):
+    class Meta:
+        model = PlotDocument
+        fields = ["document_type", "title", "file"]
+        widgets = {
+            "document_type": forms.Select(attrs={"class": "form-control"}),
+            "title": forms.TextInput(
+                attrs={
+                    "placeholder": "Optional title or short description"
+                }
+            ),
+            "file": forms.ClearableFileInput(),
+        }    
 

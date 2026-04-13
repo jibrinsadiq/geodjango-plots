@@ -176,4 +176,51 @@ class PlotMedia(models.Model):
         return f"{self.plot.plot_name} - {self.media_role} - {self.media_type}"
     
 
-    
+
+
+
+
+class PlotDocument(models.Model):
+    SALES_AGREEMENT = "sales_agreement"
+    DEED_OF_ASSIGNMENT = "deed_of_assignment"
+    POWER_OF_ATTORNEY = "power_of_attorney"
+    OTHER_DOCUMENT = "other_document"
+
+    DOCUMENT_TYPE_CHOICES = [
+        (SALES_AGREEMENT, "Sales Agreement"),
+        (DEED_OF_ASSIGNMENT, "Deed of Assignment"),
+        (POWER_OF_ATTORNEY, "Power of Attorney"),
+        (OTHER_DOCUMENT, "Other Document"),
+    ]
+
+    plot = models.ForeignKey(
+        "Plot",
+        on_delete=models.CASCADE,
+        related_name="documents",
+    )
+    document_type = models.CharField(
+        max_length=50,
+        choices=DOCUMENT_TYPE_CHOICES,
+    )
+    title = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+    file = models.FileField(
+        upload_to="plot_documents/%Y/%m/%d/"
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-uploaded_at"]
+
+    def __str__(self):
+        return f"{self.get_document_type_display()} - {self.plot.plot_name}"
+
+
+
+
+
+
+

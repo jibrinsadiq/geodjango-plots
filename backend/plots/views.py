@@ -1,43 +1,36 @@
 import json
 
 from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import Group, User
 from django.contrib.gis.geos import Point, Polygon
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.contrib.auth.models import Group, User
-from .forms import BuyerLoginForm, BuyerRegistrationForm
-from django.contrib.auth import authenticate, login, logout
-
-
-
-
-
-
-
 
 from .forms import (
+    BuyerLoginForm,
+    BuyerRegistrationForm,
     MarkerForm,
+    OwnerForm,
+    PlotDocumentForm,
     PlotMarkerCoordinatesForm,
     PlotMapForm,
-    SplitPlotForm,
-    OwnerForm,
-    PlotOwnerAssignForm,
     PlotMediaForm,
+    PlotOwnerAssignForm,
+    SplitPlotForm,
 )
-from .models import Plot, Marker, Owner, PlotMedia
-
+from .models import Plot, Marker, Owner, PlotMedia, PlotDocument
 from .services import (
     build_polygon_from_markers,
-    extract_markers_from_polygon,
     compute_plot_area,
+    extract_markers_from_polygon,
+    snap_polygon_vertices_to_parent,
+    split_plot_geometry,
     validate_plot_overlap,
     validate_plot_within_parent,
-    split_plot_geometry,
-    snap_polygon_vertices_to_parent,
 )
-
 
 
 
@@ -58,6 +51,7 @@ def plot_detail(request, plot_id):
     form = MarkerForm(instance=marker_instance)
     owner_form = PlotOwnerAssignForm(instance=plot)
     media_form = PlotMediaForm()
+    document_form = PlotDocumentForm()
 
     if request.method == "POST":
         if "save_marker" in request.POST:
@@ -73,6 +67,7 @@ def plot_detail(request, plot_id):
 
             owner_form = PlotOwnerAssignForm(instance=plot)
             media_form = PlotMediaForm()
+            document_form = PlotDocumentForm()
 
             if form.is_valid():
                 marker = form.save(commit=False)
@@ -90,6 +85,7 @@ def plot_detail(request, plot_id):
             form = MarkerForm(instance=marker_instance)
             owner_form = PlotOwnerAssignForm(request.POST, instance=plot)
             media_form = PlotMediaForm()
+            document_form = PlotDocumentForm()
 
             if owner_form.is_valid():
                 owner_form.save()
@@ -100,6 +96,7 @@ def plot_detail(request, plot_id):
             form = MarkerForm(instance=marker_instance)
             owner_form = PlotOwnerAssignForm(instance=plot)
             media_form = PlotMediaForm(request.POST, request.FILES)
+            document_form = PlotDocumentForm()
 
             if media_form.is_valid():
                 media = media_form.save(commit=False)
@@ -108,10 +105,26 @@ def plot_detail(request, plot_id):
                 messages.success(request, "Media uploaded successfully.")
                 return redirect("plots:plot_detail", plot_id=plot.id)
 
+        elif "upload_document" in request.POST:
+            form = MarkerForm(instance=marker_instance)
+            owner_form = PlotOwnerAssignForm(instance=plot)
+            media_form = PlotMediaForm()
+            document_form = PlotDocumentForm(request.POST, request.FILES)
+
+            if document_form.is_valid():
+                document = document_form.save(commit=False)
+                document.plot = plot
+                document.save()
+                messages.success(request, "Document uploaded successfully.")
+                return redirect("plots:plot_detail", plot_id=plot.id)
+            else:
+                messages.error(request, "Please correct the document upload errors below.")
+
         elif "generate_polygon" in request.POST:
             form = MarkerForm(instance=marker_instance)
             owner_form = PlotOwnerAssignForm(instance=plot)
             media_form = PlotMediaForm()
+            document_form = PlotDocumentForm()
 
             try:
                 with transaction.atomic():
@@ -157,12 +170,14 @@ def plot_detail(request, plot_id):
                     "area_sqm": child.area_sqm,
                     "area_hectares": child.area_hectares,
                     "is_active": child.is_active,
+                    "availability_status": child.availability_status,
                 }
             )
 
     media_items = plot.media_files.order_by("-uploaded_at")
     image_items = media_items.filter(media_type="image")
     video_items = media_items.filter(media_type="video")
+    document_items = plot.documents.all()
 
     return render(
         request,
@@ -173,6 +188,7 @@ def plot_detail(request, plot_id):
             "form": form,
             "owner_form": owner_form,
             "media_form": media_form,
+            "document_form": document_form,
             "editing_marker": marker_instance,
             "polygon_coords": polygon_coords,
             "marker_data": marker_data,
@@ -181,8 +197,10 @@ def plot_detail(request, plot_id):
             "media_items": media_items,
             "image_items": image_items,
             "video_items": video_items,
+            "document_items": document_items,
         },
     )
+
 
 
 
@@ -553,7 +571,6 @@ def owner_create(request):
 
 
 
-
 def plot_gallery(request, plot_id):
     plot = get_object_or_404(Plot, id=plot_id)
 
@@ -563,6 +580,7 @@ def plot_gallery(request, plot_id):
     right_images = plot.media_files.filter(media_type="image", media_role="right_view")
     other_images = plot.media_files.filter(media_type="image", media_role="other_view")
     videos = plot.media_files.filter(media_type="video", media_role="plot_video")
+    document_items = plot.documents.all()
 
     polygon_coords = []
     if plot.polygon:
@@ -580,10 +598,9 @@ def plot_gallery(request, plot_id):
             "right_images": right_images,
             "other_images": other_images,
             "videos": videos,
+            "document_items": document_items,
         },
     )
-
-
 
 
 
@@ -745,6 +762,21 @@ def buyer_logout(request):
         messages.success(request, "You have logged out successfully.")
     return redirect("plots:plot_list")
 
+
+
+
+
+
+def delete_plot_document(request, plot_id, document_id):
+    plot = get_object_or_404(Plot, id=plot_id)
+    document = get_object_or_404(PlotDocument, id=document_id, plot=plot)
+
+    if document.file:
+        document.file.delete(save=False)
+
+    document.delete()
+    messages.success(request, "Document deleted successfully.")
+    return redirect("plots:plot_detail", plot_id=plot.id)
 
 
 
