@@ -165,6 +165,10 @@
             background: #fff;
         }
 
+        input[type="date"] {
+            min-height: 42px;
+        }
+
         .errorlist {
             color: #b91c1c;
             margin: 6px 0 0 0;
@@ -247,5 +251,21 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const dobField =
+                document.getElementById("id_date_of_birth") ||
+                document.getElementById("id_dob") ||
+                document.querySelector('input[name="date_of_birth"]') ||
+                document.querySelector('input[name="dob"]');
+
+            if (dobField) {
+                dobField.type = "date";
+                dobField.placeholder = "";
+                dobField.max = new Date().toISOString().split("T")[0];
+            }
+        });
+    </script>
 </body>
 </html>
