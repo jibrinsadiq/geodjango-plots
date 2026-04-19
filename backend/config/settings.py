@@ -24,10 +24,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure--66(#e)&85hxv)snk@hmov(eh@tbkw3%-%50!(uv(gq#+xf$!0'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False# True
 
-ALLOWED_HOSTS = ["*"]
-
+#ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["sclproperties.ng", "www.sclproperties.ng", "18.133.243.174","127.0.0.1"]
 
 # Application definition
 
@@ -137,3 +137,13 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://sclproperties.ng",
+    "http://www.sclproperties.ng",
+    "https://sclproperties.ng",
+    "https://www.sclproperties.ng",
+]
+
+
