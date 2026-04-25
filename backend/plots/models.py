@@ -1,5 +1,6 @@
 from django.contrib.gis.db import models
 from django.core.validators import MinValueValidator
+from django.contrib.gis.db import models as gis_models
 
 
 class Owner(models.Model):
@@ -221,6 +222,28 @@ class PlotDocument(models.Model):
 
 
 
+
+class TownBoundary(gis_models.Model):
+    fid = gis_models.IntegerField(blank=True, null=True)
+    TOWN_NAME = gis_models.CharField(max_length=255, blank=True, null=True)
+    TOWN_CATEG = gis_models.CharField(max_length=255, blank=True, null=True)
+    PARENT_TOW = gis_models.CharField(max_length=255, blank=True, null=True)
+    PARENT_T_1 = gis_models.CharField(max_length=255, blank=True, null=True)
+    STATE = gis_models.CharField(max_length=255, blank=True, null=True)
+    Town_rank = gis_models.IntegerField(blank=True, null=True)
+    Town_cat = gis_models.CharField(max_length=255, blank=True, null=True)
+    Update_Ver = gis_models.CharField(max_length=255, blank=True, null=True)
+
+    geom = gis_models.GeometryField()
+
+    created_at = gis_models.DateTimeField(auto_now_add=True)
+    updated_at = gis_models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["TOWN_NAME"]
+
+    def __str__(self):
+        return self.TOWN_NAME if self.TOWN_NAME else "Unnamed Location"
 
 
 
