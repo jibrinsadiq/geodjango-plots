@@ -58,6 +58,11 @@ class Plot(models.Model):
     area_sqm = models.FloatField(blank=True, null=True)
     area_hectares = models.FloatField(blank=True, null=True)
 
+    town_name = models.CharField(max_length=255, blank=True, null=True)
+    lga_name = models.CharField(max_length=255, blank=True, null=True)
+    state_name = models.CharField(max_length=255, blank=True, null=True)
+
+
     parent_plot = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL,
@@ -234,7 +239,7 @@ class TownBoundary(gis_models.Model):
     Town_cat = gis_models.CharField(max_length=255, blank=True, null=True)
     Update_Ver = gis_models.CharField(max_length=255, blank=True, null=True)
 
-    geom = gis_models.GeometryField()
+    geom = gis_models.MultiPolygonField(srid=4326)
 
     created_at = gis_models.DateTimeField(auto_now_add=True)
     updated_at = gis_models.DateTimeField(auto_now=True)
@@ -246,4 +251,26 @@ class TownBoundary(gis_models.Model):
         return self.TOWN_NAME if self.TOWN_NAME else "Unnamed Location"
 
 
+from django.contrib.gis.db import models as gis_models
+
+
+class AdminBoundary(gis_models.Model):
+    LGA = gis_models.CharField(max_length=255, blank=True, null=True)
+    STATENAME = gis_models.CharField(max_length=255, blank=True, null=True)
+    City = gis_models.CharField(max_length=255, blank=True, null=True)
+    STATE = gis_models.CharField(max_length=255, blank=True, null=True)
+
+    geom = gis_models.MultiPolygonField(srid=4326)
+
+    created_at = gis_models.DateTimeField(auto_now_add=True)
+    updated_at = gis_models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["STATENAME", "LGA"]
+
+    def __str__(self):
+        if self.LGA and self.STATENAME:
+            return f"{self.LGA} ({self.STATENAME})"
+        return self.LGA or self.STATENAME or "Unnamed Admin Boundary"
+    
 

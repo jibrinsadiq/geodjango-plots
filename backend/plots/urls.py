@@ -14,6 +14,7 @@ from .views import (
     buyer_login,
     buyer_logout,
     delete_plot_document,
+    town_boundaries_geojson,
 
 )
 
@@ -43,6 +44,7 @@ urlpatterns = [
     delete_plot_document,
     name="delete_plot_document",
 ),
+    path("town-boundaries.geojson", town_boundaries_geojson, name="town_boundaries_geojson"),
    
 
 

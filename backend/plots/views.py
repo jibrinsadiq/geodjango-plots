@@ -36,8 +36,6 @@ from .services import (
 
 
 
-
-
 def plot_detail(request, plot_id):
     plot = get_object_or_404(Plot, id=plot_id)
     markers = plot.markers.order_by("marker_order")
@@ -130,12 +128,22 @@ def plot_detail(request, plot_id):
                 with transaction.atomic():
                     polygon = build_polygon_from_markers(plot)
                     plot.polygon = polygon
-                    plot.save(update_fields=["polygon", "updated_at"])
 
                     area_sqm, area_hectares = compute_plot_area(plot)
                     plot.area_sqm = area_sqm
                     plot.area_hectares = area_hectares
-                    plot.save(update_fields=["area_sqm", "area_hectares", "updated_at"])
+
+                    assign_plot_location_fields(plot)
+
+                    plot.save(update_fields=[
+                        "polygon",
+                        "area_sqm",
+                        "area_hectares",
+                        "town_name",
+                        "lga_name",
+                        "state_name",
+                        "updated_at",
+                    ])
 
                 messages.success(request, "Polygon generated successfully.")
                 return redirect("plots:plot_detail", plot_id=plot.id)
@@ -203,7 +211,6 @@ def plot_detail(request, plot_id):
 
 
 
-
 def delete_marker(request, plot_id, marker_id):
     plot = get_object_or_404(Plot, id=plot_id)
     marker = get_object_or_404(Marker, id=marker_id, plot=plot)
@@ -221,6 +228,7 @@ def delete_marker(request, plot_id, marker_id):
             "marker": marker,
         },
     )
+
 
 
 def create_plot_by_marker_coordinates(request):
@@ -321,7 +329,17 @@ def create_plot_by_marker_coordinates(request):
                     area_sqm, area_hectares = compute_plot_area(plot)
                     plot.area_sqm = area_sqm
                     plot.area_hectares = area_hectares
-                    plot.save(update_fields=["area_sqm", "area_hectares", "updated_at"])
+
+                    assign_plot_location_fields(plot)
+
+                    plot.save(update_fields=[
+                        "area_sqm",
+                        "area_hectares",
+                        "town_name",
+                        "lga_name",
+                        "state_name",
+                        "updated_at",
+                    ])
 
                 messages.success(request, "Plot created from marker coordinates.")
                 return redirect(f"{reverse('plots:plot_list')}?plot_id={plot.id}")
@@ -336,6 +354,7 @@ def create_plot_by_marker_coordinates(request):
         "plots/create_plot_by_marker_coordinates.html",
         {"form": form},
     )
+
 
 
 def create_plot_by_map(request):
@@ -377,7 +396,17 @@ def create_plot_by_map(request):
                     area_sqm, area_hectares = compute_plot_area(plot)
                     plot.area_sqm = area_sqm
                     plot.area_hectares = area_hectares
-                    plot.save(update_fields=["area_sqm", "area_hectares", "updated_at"])
+
+                    assign_plot_location_fields(plot)
+
+                    plot.save(update_fields=[
+                        "area_sqm",
+                        "area_hectares",
+                        "town_name",
+                        "lga_name",
+                        "state_name",
+                        "updated_at",
+                    ])
 
                     extract_markers_from_polygon(plot)
 
@@ -468,7 +497,17 @@ def plot_list(request):
                     cut_area_sqm, cut_area_hectares = compute_plot_area(cut_plot)
                     cut_plot.area_sqm = cut_area_sqm
                     cut_plot.area_hectares = cut_area_hectares
-                    cut_plot.save(update_fields=["area_sqm", "area_hectares", "updated_at"])
+
+                    assign_plot_location_fields(cut_plot)
+
+                    cut_plot.save(update_fields=[
+                        "area_sqm",
+                        "area_hectares",
+                        "town_name",
+                        "lga_name",
+                        "state_name",
+                        "updated_at",
+                    ])
 
                     extract_markers_from_polygon(cut_plot)
 
@@ -483,7 +522,17 @@ def plot_list(request):
                     rem_area_sqm, rem_area_hectares = compute_plot_area(remainder_plot)
                     remainder_plot.area_sqm = rem_area_sqm
                     remainder_plot.area_hectares = rem_area_hectares
-                    remainder_plot.save(update_fields=["area_sqm", "area_hectares", "updated_at"])
+
+                    assign_plot_location_fields(remainder_plot)
+
+                    remainder_plot.save(update_fields=[
+                        "area_sqm",
+                        "area_hectares",
+                        "town_name",
+                        "lga_name",
+                        "state_name",
+                        "updated_at",
+                    ])
 
                     extract_markers_from_polygon(remainder_plot)
 
@@ -798,3 +847,201 @@ def user_can_view_gallery(user):
 
 
 #===================================================================================
+# Adding shape file for state and LGAs
+#===================================================================================
+
+from collections import defaultdict
+import json
+
+from django.http import JsonResponse
+from django.contrib.gis.geos import GeometryCollection, MultiPolygon, Polygon, GEOSException
+
+from .models import TownBoundary, AdminBoundary
+
+
+def _fix_geom(geom):
+    if geom is None:
+        return None
+
+    try:
+        fixed = geom.buffer(0)
+    except GEOSException:
+        return None
+
+    if fixed.empty:
+        return None
+
+    if isinstance(fixed, Polygon):
+        return MultiPolygon(fixed)
+
+    if isinstance(fixed, MultiPolygon):
+        return fixed
+
+    if isinstance(fixed, GeometryCollection):
+        polys = []
+        for part in fixed:
+            if isinstance(part, Polygon):
+                polys.append(part)
+            elif isinstance(part, MultiPolygon):
+                for subpart in part:
+                    polys.append(subpart)
+
+        if not polys:
+            return None
+
+        return MultiPolygon(*polys)
+
+    return None
+
+
+def town_boundaries_geojson(request):
+    mode = request.GET.get("mode", "town")
+
+    if mode == "town":
+        qs = TownBoundary.objects.exclude(geom__isnull=True)
+
+        features = []
+        for item in qs:
+            geom = _fix_geom(item.geom)
+            if not geom:
+                continue
+
+            features.append({
+                "type": "Feature",
+                "geometry": json.loads(geom.geojson),
+                "properties": {
+                    "label": item.TOWN_NAME or "-",
+                    "mode": "town",
+                }
+            })
+
+        return JsonResponse({
+            "type": "FeatureCollection",
+            "features": features,
+        })
+
+    if mode == "lga":
+        qs = (
+            AdminBoundary.objects
+            .exclude(geom__isnull=True)
+            .exclude(LGA__isnull=True)
+            .exclude(LGA__exact="")
+        )
+
+        features = []
+        for item in qs:
+            geom = _fix_geom(item.geom)
+            if not geom:
+                continue
+
+            features.append({
+                "type": "Feature",
+                "geometry": json.loads(geom.geojson),
+                "properties": {
+                    "label": item.LGA,
+                    "mode": "lga",
+                }
+            })
+
+        return JsonResponse({
+            "type": "FeatureCollection",
+            "features": features,
+        })
+
+    if mode == "state":
+        qs = (
+            AdminBoundary.objects
+            .exclude(geom__isnull=True)
+            .exclude(STATENAME__isnull=True)
+            .exclude(STATENAME__exact="")
+            .only("STATENAME", "geom")
+        )
+
+        grouped = defaultdict(list)
+        for item in qs:
+            geom = _fix_geom(item.geom)
+            if geom:
+                grouped[item.STATENAME].append(geom)
+
+        features = []
+        for state_name, geoms in grouped.items():
+            if not geoms:
+                continue
+
+            merged = geoms[0]
+            for geom in geoms[1:]:
+                try:
+                    merged = merged.union(geom)
+                except GEOSException:
+                    continue
+
+            merged = _fix_geom(merged)
+            if not merged:
+                continue
+
+            features.append({
+                "type": "Feature",
+                "geometry": json.loads(merged.geojson),
+                "properties": {
+                    "label": state_name,
+                    "mode": "state",
+                }
+            })
+
+        return JsonResponse({
+            "type": "FeatureCollection",
+            "features": features,
+        })
+
+    return JsonResponse({
+        "type": "FeatureCollection",
+        "features": [],
+    })
+
+
+#===================================================================================
+#helper to classify a plot
+#===================================================================================
+
+from .models import TownBoundary, AdminBoundary
+
+
+def assign_plot_location_fields(plot):
+    if not plot.polygon:
+        plot.town_name = None
+        plot.lga_name = None
+        plot.state_name = None
+        return
+
+    town_match = (
+        TownBoundary.objects
+        .filter(geom__intersects=plot.polygon)
+        .exclude(TOWN_NAME__isnull=True)
+        .exclude(TOWN_NAME__exact="")
+        .first()
+    )
+
+    admin_match = (
+        AdminBoundary.objects
+        .filter(geom__intersects=plot.polygon)
+        .first()
+    )
+
+    plot.town_name = town_match.TOWN_NAME if town_match else None
+    plot.lga_name = admin_match.LGA if admin_match and admin_match.LGA else None
+    plot.state_name = (
+        admin_match.STATENAME if admin_match and admin_match.STATENAME
+        else admin_match.STATE if admin_match and admin_match.STATE
+        else None
+    )
+
+
+
+
+
+
+
+
+
+
+

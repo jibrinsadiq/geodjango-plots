@@ -480,6 +480,23 @@
                     {{ plot.get_availability_status_display }}
                 </div>
 
+
+<div class="summary-card">
+    <strong>Town:</strong><br>
+    {{ plot.town_name|default:"-" }}
+</div>
+
+<div class="summary-card">
+    <strong>LGA:</strong><br>
+    {{ plot.lga_name|default:"-" }}
+</div>
+
+<div class="summary-card">
+    <strong>State:</strong><br>
+    {{ plot.state_name|default:"-" }}
+</div>
+
+
                 <div class="summary-card">
                     <strong>Area (sqm):</strong><br>
                     {{ plot.area_sqm|floatformat:2|intcomma|default:"-" }}

@@ -56,6 +56,11 @@
             border: 1px solid #e8eef5;
         }
 
+.map-legend-swatch.boundary {
+    background: #cbd5e1;
+    border: 1px solid #64748b;
+}
+
         h1, h2, h3 {
             color: var(--text);
             margin-top: 0;
@@ -293,7 +298,7 @@
 
         .selected-plot-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(140px, 1fr));
+            grid-template-columns: repeat(3, minmax(160px, 1fr));
             gap: 6px;
             margin-top: 4px;
         }
@@ -373,7 +378,7 @@
         }
 
         #workspace-map {
-            height: 440px;
+            height: 520px;
             border: 1px solid #cfd8e3;
             border-radius: 14px;
             margin-bottom: 14px;
@@ -392,6 +397,64 @@
         .split-panel.hidden {
             display: none;
         }
+
+
+.leaflet-control-layers {
+    border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    border: 1px solid #d7e1ec;
+    overflow: hidden;
+}
+
+.leaflet-control-layers-expanded {
+    padding: 10px 12px;
+    min-width: 220px;
+}
+
+.leaflet-control-layers-base label,
+.leaflet-control-layers-overlays label {
+    display: block;
+    margin: 0 0 6px 0;
+    font-size: 13px;
+    color: #334155;
+    white-space: nowrap;
+}
+
+.leaflet-control-layers-base label:last-child,
+.leaflet-control-layers-overlays label:last-child {
+    margin-bottom: 0;
+}
+
+.leaflet-control-layers-base label span,
+.leaflet-control-layers-overlays label span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.leaflet-control-layers-selector {
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.boundary-radio-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #334155;
+}
+
+.boundary-radio-row + .boundary-radio-row {
+    margin-top: 6px;
+}
+
+.boundary-radio-row span {
+    flex: 1;
+}
+
 
 
 
@@ -524,7 +587,7 @@
             }
 
             #workspace-map {
-                height: 400px;
+                height: 500px;
             }
 
             .selected-plot-grid {
@@ -547,7 +610,7 @@
             }
 
             #workspace-map {
-                height: 340px;
+                height: 370px;
             }
 
 
@@ -614,26 +677,35 @@
                         type="text"
                         id="plot-search"
                         class="plot-search"
-                        placeholder="Search by plot name or code"
+                        placeholder="Search by plot name, code, town, LGA, or state"
                     >
                 </div>
 
                 <div class="plot-list" id="plot-list">
                     {% for plot in plots %}
-                        <div
-                            class="plot-item {% if selected_plot and plot.id == selected_plot.id %}selected{% endif %}"
-                            data-plot-name="{{ plot.plot_name|lower }}"
-                            data-plot-code="{{ plot.plot_code|default:''|lower }}"
-                        >
-                            <a href="{% url 'plots:plot_list' %}?plot_id={{ plot.id }}">
-                                <div class="plot-item-title">{{ plot.plot_name }}</div>
-                                <div class="meta">Code: {{ plot.plot_code|default:"-" }}</div>
-                                <div class="meta">Area: {{ plot.area_sqm|floatformat:2|intcomma|default:"-" }} sqm</div>
-                                <div class="badge {% if plot.is_active %}active{% else %}inactive{% endif %}">
-                                    {% if plot.is_active %}Active{% else %}Inactive{% endif %}
-                                </div>
-                            </a>
-                        </div>
+                        
+<div
+    class="plot-item {% if selected_plot and plot.id == selected_plot.id %}selected{% endif %}"
+    data-plot-name="{{ plot.plot_name|lower }}"
+    data-plot-code="{{ plot.plot_code|default:''|lower }}"
+    data-plot-town="{{ plot.town_name|default:''|lower }}"
+    data-plot-lga="{{ plot.lga_name|default:''|lower }}"
+    data-plot-state="{{ plot.state_name|default:''|lower }}"
+>
+    <a href="{% url 'plots:plot_list' %}?plot_id={{ plot.id }}">
+        <div class="plot-item-title">{{ plot.plot_name }}</div>
+        <div class="meta">Code: {{ plot.plot_code|default:"-" }}</div>
+        <div class="meta">Town: {{ plot.town_name|default:"-" }}</div>
+        <div class="meta">LGA: {{ plot.lga_name|default:"-" }}</div>
+        <div class="meta">State: {{ plot.state_name|default:"-" }}</div>
+        <div class="meta">Area: {{ plot.area_sqm|floatformat:2|intcomma|default:"-" }} sqm</div>
+        <div class="badge {% if plot.is_active %}active{% else %}inactive{% endif %}">
+            {% if plot.is_active %}Active{% else %}Inactive{% endif %}
+        </div>
+    </a>
+</div>
+
+
                     {% empty %}
                         <p class="note">No plots available yet.</p>
                     {% endfor %}
@@ -650,31 +722,44 @@
 
                     <div class="selected-plot-box">
                         <div class="selected-plot-grid">
-                            <div class="selected-plot-item">
-                                <strong>Name</strong>
-                                {{ selected_plot.plot_name }}
-                            </div>
-                            <div class="selected-plot-item">
-                                <strong>Code</strong>
-                                {{ selected_plot.plot_code|default:"-" }}
-                            </div>
-                            <div class="selected-plot-item">
-                                <strong>Status</strong>
-                                {% if selected_plot.is_active %}Active{% else %}Inactive{% endif %}
-                            </div>
-                            <div class="selected-plot-item">
-                                <strong>Area (sqm)</strong>
-                                {{ selected_plot.area_sqm|floatformat:2|intcomma|default:"-" }}
-                            </div>
-                            <div class="selected-plot-item">
-                                <strong>Area (hectares)</strong>
-                                {{ selected_plot.area_hectares|floatformat:4|intcomma|default:"-" }}
-                            </div>
-                            <div class="selected-plot-item">
-                                <strong>Source Plot</strong>
-                                {% if selected_plot.parent_plot %}{{ selected_plot.parent_plot.plot_name }}{% else %}-{% endif %}
-                            </div>
-                        </div>
+    <div class="selected-plot-item">
+        <strong>Name</strong>
+        {{ selected_plot.plot_name }}
+    </div>
+    <div class="selected-plot-item">
+        <strong>Code</strong>
+        {{ selected_plot.plot_code|default:"-" }}
+    </div>
+    <div class="selected-plot-item">
+        <strong>Status</strong>
+        {% if selected_plot.is_active %}Active{% else %}Inactive{% endif %}
+    </div>
+    <div class="selected-plot-item">
+        <strong>Area (sqm)</strong>
+        {{ selected_plot.area_sqm|floatformat:2|intcomma|default:"-" }}
+    </div>
+    <div class="selected-plot-item">
+        <strong>Area (hectares)</strong>
+        {{ selected_plot.area_hectares|floatformat:4|intcomma|default:"-" }}
+    </div>
+    <div class="selected-plot-item">
+        <strong>Source Plot</strong>
+        {% if selected_plot.parent_plot %}{{ selected_plot.parent_plot.plot_name }}{% else %}-{% endif %}
+    </div>
+    <div class="selected-plot-item">
+        <strong>Town</strong>
+        {{ selected_plot.town_name|default:"-" }}
+    </div>
+    <div class="selected-plot-item">
+        <strong>LGA</strong>
+        {{ selected_plot.lga_name|default:"-" }}
+    </div>
+    <div class="selected-plot-item">
+        <strong>State</strong>
+        {{ selected_plot.state_name|default:"-" }}
+    </div>
+</div>
+
 
 <div class="actions-row">
     {% if is_agent_user %}
@@ -692,6 +777,9 @@
 </div>
                     </div>
                 {% endif %}
+
+
+
 
                 <h2>Workspace Map</h2>
                 <div id="workspace-map"></div>
@@ -801,43 +889,135 @@
         "Street Map": streetLayer
     };
 
-    L.control.layers(baseMaps, null, { collapsed: false }).addTo(workspaceMap);
-
-const availabilityLegend = L.control({ position: "topright" });
-
-availabilityLegend.onAdd = function () {
-    const div = L.DomUtil.create("div", "map-legend");
-    div.innerHTML = `
-        <div class="map-legend-title">Availability Legend</div>
-        <div class="map-legend-item">
-            <span class="map-legend-swatch available"></span>
-            <span>Available</span>
-        </div>
-        <div class="map-legend-item">
-            <span class="map-legend-swatch reserved"></span>
-            <span>Reserved</span>
-        </div>
-        <div class="map-legend-item">
-            <span class="map-legend-swatch unavailable"></span>
-            <span>Unavailable</span>
-        </div>
-        <div class="map-legend-item">
-            <span class="map-legend-swatch sold"></span>
-            <span>Sold</span>
-        </div>
-        <div class="map-legend-item">
-            <span class="map-legend-swatch selected"></span>
-            <span>Selected plot</span>
-        </div>
-    `;
-    return div;
-};
-
-availabilityLegend.addTo(workspaceMap);
-
-
     const bounds = [];
     let selectedPolygonLayer = null;
+    let currentBoundaryMode = "town";
+
+    const boundaryLayer = L.geoJSON(null, {
+        style: function () {
+            if (currentBoundaryMode === "state") {
+                return {
+                    color: "#7c3aed",
+                    weight: 4,
+                    fillColor: "#a78bfa",
+                    fillOpacity: 0.02,
+                    dashArray: "8 6"
+                };
+            }
+
+            if (currentBoundaryMode === "lga") {
+                return {
+                    color: "#0f766e",
+                    weight: 2,
+                    fillColor: "#5eead4",
+                    fillOpacity: 0.04
+                };
+            }
+
+            return {
+                color: "#475569",
+                weight: 1,
+                fillColor: "#94a3b8",
+                fillOpacity: 0.03
+            };
+        },
+        onEachFeature: function (feature, layer) {
+            const props = feature.properties || {};
+
+            if (currentBoundaryMode === "state") {
+                layer.bindPopup(
+                    `<strong>State:</strong> ${props.label || "-"}`
+                );
+                return;
+            }
+
+            if (currentBoundaryMode === "lga") {
+                layer.bindPopup(
+                    `<strong>LGA:</strong> ${props.label || "-"}`
+                );
+                return;
+            }
+
+            layer.bindPopup(
+                `<strong>Town:</strong> ${props.label || "-"}`
+            );
+        }
+    });
+
+    L.control.layers(baseMaps, null, { collapsed: false }).addTo(workspaceMap);
+
+    const availabilityLegend = L.control({ position: "topright" });
+
+    availabilityLegend.onAdd = function () {
+        const div = L.DomUtil.create("div", "map-legend");
+        div.innerHTML = `
+            <div class="map-legend-title">Availability Legend</div>
+            <div class="map-legend-item">
+                <span class="map-legend-swatch available"></span>
+                <span>Available</span>
+            </div>
+            <div class="map-legend-item">
+                <span class="map-legend-swatch reserved"></span>
+                <span>Reserved</span>
+            </div>
+            <div class="map-legend-item">
+                <span class="map-legend-swatch unavailable"></span>
+                <span>Unavailable</span>
+            </div>
+            <div class="map-legend-item">
+                <span class="map-legend-swatch sold"></span>
+                <span>Sold</span>
+            </div>
+            <div class="map-legend-item">
+                <span class="map-legend-swatch selected"></span>
+                <span>Selected plot</span>
+            </div>
+            <div class="map-legend-item">
+                <span class="map-legend-swatch boundary"></span>
+                <span>Boundary layer</span>
+            </div>
+        `;
+        return div;
+    };
+
+    availabilityLegend.addTo(workspaceMap);
+
+    const boundarySelectorControl = L.control({ position: "topright" });
+
+    boundarySelectorControl.onAdd = function () {
+        const div = L.DomUtil.create("div", "map-legend");
+        div.style.minWidth = "200px";
+        div.style.marginTop = "10px";
+
+        div.innerHTML = `
+            <div class="map-legend-title">Boundary Layer</div>
+            <div>
+    <label class="boundary-radio-row">
+        <span>None</span>
+        <input type="radio" name="boundary-mode" value="none">
+    </label>
+    <label class="boundary-radio-row">
+        <span>City / Town</span>
+        <input type="radio" name="boundary-mode" value="town" checked>
+    </label>
+    <label class="boundary-radio-row">
+        <span>LGA</span>
+        <input type="radio" name="boundary-mode" value="lga">
+    </label>
+    <label class="boundary-radio-row">
+        <span>State</span>
+        <input type="radio" name="boundary-mode" value="state">
+    </label>
+</div>
+        `;
+
+        L.DomEvent.disableClickPropagation(div);
+        L.DomEvent.disableScrollPropagation(div);
+
+        return div;
+    };
+
+    boundarySelectorControl.addTo(workspaceMap);
 
     function getPlotStyle(plot) {
         const status = (plot.availability_status || "").toLowerCase();
@@ -915,6 +1095,51 @@ availabilityLegend.addTo(workspaceMap);
         }
     });
 
+    function loadBoundaryLayer(mode) {
+        currentBoundaryMode = mode;
+        boundaryLayer.clearLayers();
+
+        if (workspaceMap.hasLayer(boundaryLayer)) {
+            workspaceMap.removeLayer(boundaryLayer);
+        }
+
+        if (mode === "none") {
+            return;
+        }
+
+        fetch(`{% url 'plots:town_boundaries_geojson' %}?mode=${mode}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Could not load boundary layer.");
+                }
+                return response.json();
+            })
+            .then(data => {
+                boundaryLayer.clearLayers();
+                boundaryLayer.addData(data);
+                boundaryLayer.addTo(workspaceMap);
+
+                if (currentBoundaryMode === "state") {
+                    boundaryLayer.eachLayer(layer => {
+                        if (layer.bringToFront) {
+                            layer.bringToFront();
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("Boundary load error:", error);
+            });
+    }
+
+    document.addEventListener("change", function (event) {
+        if (event.target && event.target.name === "boundary-mode") {
+            loadBoundaryLayer(event.target.value);
+        }
+    });
+
+    loadBoundaryLayer("town");
+
     if (bounds.length > 0) {
         workspaceMap.fitBounds(bounds, { padding: [20, 20] });
     }
@@ -928,17 +1153,26 @@ availabilityLegend.addTo(workspaceMap);
             const query = this.value.trim().toLowerCase();
             let visibleCount = 0;
 
-            plotItems.forEach(item => {
-                const name = item.dataset.plotName || "";
-                const code = item.dataset.plotCode || "";
-                const matches = name.includes(query) || code.includes(query);
+plotItems.forEach(item => {
+    const name = item.dataset.plotName || "";
+    const code = item.dataset.plotCode || "";
+    const town = item.dataset.plotTown || "";
+    const lga = item.dataset.plotLga || "";
+    const state = item.dataset.plotState || "";
 
-                item.style.display = matches ? "" : "none";
+    const matches =
+        name.includes(query) ||
+        code.includes(query) ||
+        town.includes(query) ||
+        lga.includes(query) ||
+        state.includes(query);
 
-                if (matches) {
-                    visibleCount += 1;
-                }
-            });
+    item.style.display = matches ? "" : "none";
+
+    if (matches) {
+        visibleCount += 1;
+    }
+});
 
             if (emptySearchMessage) {
                 emptySearchMessage.style.display = visibleCount === 0 ? "block" : "none";
@@ -1061,7 +1295,6 @@ availabilityLegend.addTo(workspaceMap);
         });
     {% endif %}
 </script>
-
 
 </body>
 </html>
